@@ -8,6 +8,7 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.GenericHID;
@@ -17,6 +18,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.SuperstructureCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
@@ -24,6 +26,18 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOTalonFX;
+import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.intake.IntakeIO;
+import frc.robot.subsystems.intake.IntakeIOTalonFX;
+import frc.robot.subsystems.serializer.Serializer;
+import frc.robot.subsystems.serializer.SerializerIO;
+import frc.robot.subsystems.serializer.SerializerIOTalonFX;
+import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterIO;
+import frc.robot.subsystems.shooter.ShooterIOTalonFX;
+import frc.robot.subsystems.vision.Vision;
+import frc.robot.subsystems.vision.VisionIO;
+import frc.robot.subsystems.vision.VisionIOLimelight;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -35,6 +49,11 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 public class RobotContainer {
   // Subsystems
   private final Drive drive;
+  private final Intake intake;
+  private final Shooter shooter;
+  private final Serializer serializer;
+  private final Vision vision;
+  private final SuperstructureCommands superstructure;
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
@@ -56,24 +75,14 @@ public class RobotContainer {
                 new ModuleIOTalonFX(TunerConstants.FrontRight),
                 new ModuleIOTalonFX(TunerConstants.BackLeft),
                 new ModuleIOTalonFX(TunerConstants.BackRight));
-
-        // The ModuleIOTalonFXS implementation provides an example implementation for
-        // TalonFXS controller connected to a CANdi with a PWM encoder. The
-        // implementations
-        // of ModuleIOTalonFX, ModuleIOTalonFXS, and ModuleIOSpark (from the Spark
-        // swerve
-        // template) can be freely intermixed to support alternative hardware
-        // arrangements.
-        // Please see the AdvantageKit template documentation for more information:
-        // https://docs.advantagekit.org/getting-started/template-projects/talonfx-swerve-template#custom-module-implementations
-        //
-        // drive =
-        // new Drive(
-        // new GyroIOPigeon2(),
-        // new ModuleIOTalonFXS(TunerConstants.FrontLeft),
-        // new ModuleIOTalonFXS(TunerConstants.FrontRight),
-        // new ModuleIOTalonFXS(TunerConstants.BackLeft),
-        // new ModuleIOTalonFXS(TunerConstants.BackRight));
+        intake = new Intake(new IntakeIOTalonFX());
+        shooter = new Shooter(new ShooterIOTalonFX());
+        serializer = new Serializer(new SerializerIOTalonFX(27, "can0"));
+        vision =
+            new Vision(
+                drive,
+                new VisionIOLimelight("limelight-left"),
+                new VisionIOLimelight("limelight-right"));
         break;
 
       case SIM:
@@ -85,6 +94,10 @@ public class RobotContainer {
                 new ModuleIOSim(TunerConstants.FrontRight),
                 new ModuleIOSim(TunerConstants.BackLeft),
                 new ModuleIOSim(TunerConstants.BackRight));
+        intake = new Intake(new IntakeIO() {});
+        shooter = new Shooter(new ShooterIO() {});
+        serializer = new Serializer(new SerializerIO() {});
+        vision = new Vision(drive, new VisionIO() {}, new VisionIO() {});
         break;
 
       default:
@@ -96,8 +109,19 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {},
                 new ModuleIO() {});
+        intake = new Intake(new IntakeIO() {});
+        shooter = new Shooter(new ShooterIO() {});
+        serializer = new Serializer(new SerializerIO() {});
+        vision = new Vision(drive, new VisionIO() {}, new VisionIO() {});
         break;
     }
+
+    superstructure = new SuperstructureCommands(intake, shooter, serializer);
+
+    // Register named commands for PathPlanner/Choreo
+    NamedCommands.registerCommand("INTAKE", superstructure.intakeFuelCommand());
+    NamedCommands.registerCommand("SCORE", superstructure.shootFuelCommand(2.5));
+    NamedCommands.registerCommand("STASH", superstructure.stashCommand());
 
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
@@ -160,6 +184,12 @@ public class RobotContainer {
                             new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
                     drive)
                 .ignoringDisable(true));
+
+    // Custom button bindings based on robot.py mapping
+    controller.leftBumper().whileTrue(superstructure.intakeFuelCommand());
+    controller.rightBumper().whileTrue(superstructure.shootFuelCommand(2.5));
+    controller.leftTrigger().whileTrue(superstructure.unjamCommand());
+    controller.rightTrigger().whileTrue(superstructure.ejectFuelCommand());
   }
 
   /**
