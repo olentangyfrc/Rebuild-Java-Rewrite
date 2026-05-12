@@ -9,6 +9,7 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
@@ -58,8 +59,7 @@ public class IntakeIOTalonFX implements IntakeIO {
 
     leftRollerMotor.getConfigurator().apply(rollerConfig);
     rightRollerMotor.getConfigurator().apply(rollerConfig);
-    rightRollerMotor.setControl(
-        new Follower(29, com.ctre.phoenix6.signals.MotorAlignmentValue.Opposed));
+    rightRollerMotor.setControl(new Follower(29, MotorAlignmentValue.Opposed));
 
     // Pivot config
     TalonFXConfiguration pivotConfig = new TalonFXConfiguration();

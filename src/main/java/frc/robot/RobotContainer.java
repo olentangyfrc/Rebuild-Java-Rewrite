@@ -54,6 +54,8 @@ public class RobotContainer {
   private final Intake intake;
   private final Shooter shooter;
   private final Serializer serializer;
+
+  @SuppressWarnings("unused")
   private final Vision vision;
   private final frc.robot.subsystems.superstructure.Superstructure superstructureSubsystem;
   private final SuperstructureCommands superstructure;
