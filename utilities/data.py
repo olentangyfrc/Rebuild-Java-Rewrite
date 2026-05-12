@@ -1,0 +1,41 @@
+from wpimath import units
+
+low_ceiling_interpolation_data: list[
+    tuple[units.meters, units.degrees, units.revolutions_per_minute]
+] = [
+    (1.8, 20, 1500),
+    (2, 20, 1570),
+    (2.2, 20, 1590),
+    (2.6, 23, 1610),
+    (3.09, 30, 1680),
+    (3.6, 35, 1755),
+    (4.1, 38, 1820),
+]
+
+# Chase messed up the limelight configs, so the distances are off by this much:
+CHASE_FUDGE_FACTOR = 0.6578092
+
+NEW_INDEXER_FUDGE_FACTOR = -40
+
+high_ceiling_interpolation_data: list[
+    tuple[units.meters, units.degrees, units.revolutions_per_minute]
+] = [
+    (2.20 + CHASE_FUDGE_FACTOR, 10.5, 1540 + NEW_INDEXER_FUDGE_FACTOR),
+    (2.99 + CHASE_FUDGE_FACTOR, 16, 1545 + NEW_INDEXER_FUDGE_FACTOR),
+    (2.67 + CHASE_FUDGE_FACTOR, 13, 1530 + NEW_INDEXER_FUDGE_FACTOR),
+    (2.45 + CHASE_FUDGE_FACTOR, 9, 1510 + NEW_INDEXER_FUDGE_FACTOR),
+    (2.02 + CHASE_FUDGE_FACTOR, 7, 1495 + NEW_INDEXER_FUDGE_FACTOR),
+    (1.83 + CHASE_FUDGE_FACTOR, 6, 1460 + NEW_INDEXER_FUDGE_FACTOR),
+    (1.56 + CHASE_FUDGE_FACTOR, 5, 1410 + NEW_INDEXER_FUDGE_FACTOR),
+    (1.31 + CHASE_FUDGE_FACTOR, 5, 1380 + NEW_INDEXER_FUDGE_FACTOR),
+    (1.04 + CHASE_FUDGE_FACTOR, 5, 1330 + NEW_INDEXER_FUDGE_FACTOR),
+    (0.96 + CHASE_FUDGE_FACTOR, 5, 1270 + NEW_INDEXER_FUDGE_FACTOR),
+    (3.25 + CHASE_FUDGE_FACTOR, 16, 1605 + NEW_INDEXER_FUDGE_FACTOR),
+    (3.50 + CHASE_FUDGE_FACTOR, 18, 1610 + NEW_INDEXER_FUDGE_FACTOR),
+    (0.78 + CHASE_FUDGE_FACTOR, 2, 1250 + NEW_INDEXER_FUDGE_FACTOR),
+    (3.75 + CHASE_FUDGE_FACTOR, 20, 1625 + NEW_INDEXER_FUDGE_FACTOR),
+    (4.00 + CHASE_FUDGE_FACTOR, 21, 1650 + NEW_INDEXER_FUDGE_FACTOR),
+    (4.30 + CHASE_FUDGE_FACTOR, 23, 1680 + NEW_INDEXER_FUDGE_FACTOR),
+    (4.58 + CHASE_FUDGE_FACTOR, 23.5, 1750 + NEW_INDEXER_FUDGE_FACTOR),
+    (5.29 + CHASE_FUDGE_FACTOR, 25, 1800 + NEW_INDEXER_FUDGE_FACTOR),
+]

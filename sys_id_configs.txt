@@ -1,0 +1,50 @@
+CAN ID’s + Ramp Rate + Step Voltage
+
+FL drive: 10
+FR drive: 11
+BL drive: 12
+BR drive: 13
+
+FL steer: 15
+FR steer: 16
+BL steer: 17
+BR steer: 18
+
+Right Top: 20   # rr = 0.65, step = 6
+Right Bottom: 21
+Left Top: 22
+Left Bottom: 23
+
+Indexer 1: 24   # rr = 1.5, step = 10
+Indexer 2: 25   # rr = 0.65, step = 5.00
+Hood Motor: 26
+
+
+Intake roller right: 28    # rr = 1.5, step = 10
+Intake roller left: 29
+Intake Pivot: 30
+
+Roller floor motor: 32    # rr = 0.85, step = 7
+
+Climber: 33
+
+Sensors (40+)
+
+FL Encoder: 40
+FR Encoder: 41
+BL Encoder: 42
+BR Encoder: 43
+
+Shooter CanRange Left: 45
+Shooter CanRange Right: 46
+
+Hood Absolute Encoder: 47
+
+Climber Absolute Encoder: 49
+
+Intake Pivot Absolute Encoder: 51
+
+Misc (<10)
+
+Gyro: 5
+Candle: 6
