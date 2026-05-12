@@ -14,6 +14,8 @@ public interface ShooterIO {
     public double indexer2VelocityRps = 0.0;
 
     public double hoodAngleRads = 0.0;
+    public double indexer1TorqueCurrent = 0.0;
+    public String state = "IDLE";
   }
 
   public default void updateInputs(ShooterIOInputs inputs) {}

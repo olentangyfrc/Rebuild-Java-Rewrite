@@ -15,6 +15,7 @@ public interface IntakeIO {
     public double rollerAppliedVolts = 0.0;
     public double rollerSupplyCurrentAmps = 0.0;
     public double rollerStatorCurrentAmps = 0.0;
+    public String state = "IDLE";
   }
 
   public default void updateInputs(IntakeIOInputs inputs) {}

@@ -13,7 +13,6 @@ import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import org.littletonrobotics.junction.Logger;
@@ -82,12 +81,6 @@ public class Module {
     io.setTurnPosition(state.angle);
   }
 
-  /** Runs the module with the specified output while controlling to zero degrees. */
-  public void runCharacterization(double output) {
-    io.setDriveOpenLoop(output);
-    io.setTurnPosition(Rotation2d.kZero);
-  }
-
   /** Disables all outputs to motors. */
   public void stop() {
     io.setDriveOpenLoop(0.0);
@@ -129,13 +122,5 @@ public class Module {
     return inputs.odometryTimestamps;
   }
 
-  /** Returns the module position in radians. */
-  public double getWheelRadiusCharacterizationPosition() {
-    return inputs.drivePositionRad;
-  }
-
-  /** Returns the module velocity in rotations/sec (Phoenix native units). */
-  public double getFFCharacterizationVelocity() {
-    return Units.radiansToRotations(inputs.driveVelocityRadPerSec);
-  }
+  /** Returns the timestamps of the samples received this cycle. */
 }

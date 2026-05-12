@@ -10,11 +10,14 @@ public interface SerializerIO {
     public double supplyCurrentAmps = 0.0;
     public double statorCurrentAmps = 0.0;
     public double tempCelcius = 0.0;
+    public String state = "IDLE";
   }
 
   public default void updateInputs(SerializerIOInputs inputs) {}
 
   public default void runVelocity(double velocityRps) {}
+
+  public default void setRollerVelocity(double velocityRps) {}
 
   public default void stop() {}
 }

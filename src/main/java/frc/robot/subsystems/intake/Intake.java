@@ -4,11 +4,23 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 
 public class Intake extends SubsystemBase {
+  public enum IntakeState {
+    IDLE,
+    DEPLOYED,
+    INTAKE,
+    INTAKE_PASS,
+    AGITATE,
+    EJECT,
+    STASHED,
+    EMERGENCY_STASH
+  }
+
   private final IntakeIO io;
   private final IntakeIOInputsAutoLogged inputs = new IntakeIOInputsAutoLogged();
 
@@ -18,69 +30,138 @@ public class Intake extends SubsystemBase {
   private static final double MAX_PIVOT_POSITION = Math.toRadians(116);
   private static final double MIN_PIVOT_POSITION = Math.toRadians(0.5);
 
-  private double targetPivotAngle = MAX_PIVOT_POSITION - Math.toRadians(1);
-  private double targetRollerRps = 0.0;
+  private IntakeState state = IntakeState.DEPLOYED;
+  private double targetPivotAngle = Math.toRadians(-1);
+  private double targetRollerVelocity = 0.0;
+
+  private final Timer agitationTimer = new Timer();
 
   public Intake(IntakeIO io) {
     this.io = io;
-
-    pivotFf = new ArmFeedforward(0.1, 0.35, 0.0, 0.0);
-    pivotPid = new ProfiledPIDController(4.0, 0.0, 0.1, new TrapezoidProfile.Constraints(500, 250));
+    pivotFf = new ArmFeedforward(0.0, 0.42, 0.17, 0.01);
+    pivotPid =
+        new ProfiledPIDController(
+            8.0, 0.0, 0.0, new TrapezoidProfile.Constraints(Math.PI * 2, Math.PI * 4));
     pivotPid.setTolerance(Math.toRadians(5));
-    pivotPid.reset(inputs.pivotAngleRads);
   }
 
   @Override
   public void periodic() {
     io.updateInputs(inputs);
+    handleStateLogic();
     Logger.processInputs("Intake", inputs);
 
-    double clampedTarget = MathUtil.clamp(targetPivotAngle, MIN_PIVOT_POSITION, MAX_PIVOT_POSITION);
-    pivotPid.setGoal(clampedTarget);
+    double clampedAngle = MathUtil.clamp(targetPivotAngle, MIN_PIVOT_POSITION, MAX_PIVOT_POSITION);
+    double pivotVolts =
+        pivotPid.calculate(inputs.pivotAngleRads, clampedAngle)
+            + pivotFf.calculate(clampedAngle, 0);
 
-    double pivotVoltage =
-        pivotPid.calculate(inputs.pivotAngleRads) + pivotFf.calculate(inputs.pivotAngleRads, 0);
-    io.setPivotVoltage(pivotVoltage);
+    io.setPivotVoltage(pivotVolts);
 
-    if (targetRollerRps == 0 || inputs.pivotAngleRads > Math.toRadians(42)) {
+    // Roller logic from python: stop if angle > 42 deg
+    if (targetRollerVelocity == 0 || (inputs.pivotAngleRads > Math.toRadians(42))) {
       io.setRollerVelocity(0);
     } else {
-      io.setRollerVelocity(targetRollerRps);
+      io.setRollerVelocity(targetRollerVelocity);
+    }
+
+    inputs.state = state.name();
+  }
+
+  private void handleStateLogic() {
+    switch (state) {
+      case IDLE:
+        targetRollerVelocity = 0;
+        targetPivotAngle = MAX_PIVOT_POSITION - Math.toRadians(1);
+        break;
+
+      case DEPLOYED:
+        targetPivotAngle = Math.toRadians(-1);
+        targetRollerVelocity = -5; // Keep fuel from leaking out
+        break;
+
+      case INTAKE:
+        targetRollerVelocity = -90;
+        targetPivotAngle = Math.toRadians(-1);
+        break;
+
+      case INTAKE_PASS:
+        if (inputs.pivotAngleRads < Math.toRadians(30)) {
+          targetRollerVelocity = -40;
+        }
+        targetPivotAngle = 0;
+        break;
+
+      case AGITATE:
+        if (agitationTimer.get() == 0) agitationTimer.start();
+
+        if (agitationTimer.get() > 1.5) {
+          state = IntakeState.STASHED;
+          agitationTimer.stop();
+          agitationTimer.reset();
+        } else if (agitationTimer.get() > 1.0) {
+          targetPivotAngle = Math.toRadians(60);
+        } else if (agitationTimer.get() > 0.65) {
+          targetPivotAngle = Math.toRadians(25);
+        }
+        targetRollerVelocity = -15;
+        break;
+
+      case EJECT:
+        targetRollerVelocity = 90;
+        targetPivotAngle = 0;
+        break;
+
+      case STASHED:
+        targetRollerVelocity = 0;
+        targetPivotAngle = MAX_PIVOT_POSITION - Math.toRadians(1);
+        break;
+
+      case EMERGENCY_STASH:
+        targetRollerVelocity = -30;
+        targetPivotAngle = MAX_PIVOT_POSITION - Math.toRadians(1);
+        break;
     }
   }
 
-  public void setGoal(double angleRads, double rollerRps) {
-    this.targetPivotAngle = angleRads;
-    this.targetRollerRps = rollerRps;
+  public void setState(IntakeState newState) {
+    this.state = newState;
+  }
+
+  public IntakeState getState() {
+    return this.state;
   }
 
   public Command idleCommand() {
-    return run(() -> setGoal(MAX_PIVOT_POSITION - Math.toRadians(1), 0.0)).withName("IntakeIdle");
+    return runOnce(() -> state = IntakeState.IDLE).withName("IntakeIdle");
   }
 
   public Command deployCommand() {
-    return run(() -> setGoal(Math.toRadians(-1), -5.0)).withName("IntakeDeploy");
+    return runOnce(() -> state = IntakeState.DEPLOYED).withName("IntakeDeploy");
   }
 
   public Command intakeCommand() {
-    return run(() -> setGoal(Math.toRadians(-1), -90.0)).withName("IntakeIn");
-  }
-
-  public Command intakePassCommand() {
-    return run(() -> setGoal(0.0, inputs.pivotAngleRads < Math.toRadians(30) ? -40.0 : 0.0))
-        .withName("IntakePass");
-  }
-
-  public Command ejectCommand() {
-    return run(() -> setGoal(0.0, 90.0)).withName("IntakeEject");
+    return runOnce(() -> state = IntakeState.INTAKE).withName("IntakeIntake");
   }
 
   public Command stashCommand() {
-    return run(() -> setGoal(MAX_PIVOT_POSITION - Math.toRadians(1), 0.0)).withName("IntakeStash");
+    return runOnce(() -> state = IntakeState.STASHED).withName("IntakeStash");
   }
 
-  public Command emergencyStashCommand() {
-    return run(() -> setGoal(MAX_PIVOT_POSITION - Math.toRadians(1), -30.0))
-        .withName("IntakeEmergencyStash");
+  public Command agitateCommand() {
+    return runOnce(
+            () -> {
+              state = IntakeState.AGITATE;
+              agitationTimer.restart();
+            })
+        .withName("IntakeAgitate");
+  }
+
+  public Command ejectCommand() {
+    return runOnce(() -> state = IntakeState.EJECT).withName("IntakeEject");
+  }
+
+  public boolean atTargetPosition() {
+    return pivotPid.atGoal();
   }
 }

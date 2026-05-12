@@ -58,7 +58,8 @@ public class IntakeIOTalonFX implements IntakeIO {
 
     leftRollerMotor.getConfigurator().apply(rollerConfig);
     rightRollerMotor.getConfigurator().apply(rollerConfig);
-    rightRollerMotor.setControl(new Follower(29, true));
+    rightRollerMotor.setControl(
+        new Follower(29, com.ctre.phoenix6.signals.MotorAlignmentValue.Opposed));
 
     // Pivot config
     TalonFXConfiguration pivotConfig = new TalonFXConfiguration();

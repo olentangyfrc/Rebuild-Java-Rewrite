@@ -70,6 +70,11 @@ public class SerializerIOTalonFX implements SerializerIO {
   }
 
   @Override
+  public void setRollerVelocity(double velocityRps) {
+    motor.setControl(velocityRequest.withVelocity(velocityRps));
+  }
+
+  @Override
   public void stop() {
     motor.setControl(voltageRequest.withOutput(0));
   }

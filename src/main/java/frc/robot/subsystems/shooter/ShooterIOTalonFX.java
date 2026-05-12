@@ -12,6 +12,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 
 public class ShooterIOTalonFX implements ShooterIO {
   private final TalonFX leftBottom;
@@ -33,6 +34,7 @@ public class ShooterIOTalonFX implements ShooterIO {
   private final StatusSignal<AngularVelocity> indexer1Velocity;
   private final StatusSignal<AngularVelocity> indexer2Velocity;
   private final StatusSignal<Angle> hoodPosition;
+  private final StatusSignal<Current> indexer1TorqueCurrent;
 
   private final MotionMagicVelocityVoltage shooterVelocityRequest =
       new MotionMagicVelocityVoltage(0).withEnableFOC(true);
@@ -67,9 +69,9 @@ public class ShooterIOTalonFX implements ShooterIO {
     rightBottom.getConfigurator().apply(shootConfig);
     rightTop.getConfigurator().apply(shootConfig);
 
-    leftTop.setControl(new Follower(23, false));
-    rightBottom.setControl(new Follower(23, true));
-    rightTop.setControl(new Follower(23, true));
+    leftTop.setControl(new Follower(23, com.ctre.phoenix6.signals.MotorAlignmentValue.Aligned));
+    rightBottom.setControl(new Follower(23, com.ctre.phoenix6.signals.MotorAlignmentValue.Opposed));
+    rightTop.setControl(new Follower(23, com.ctre.phoenix6.signals.MotorAlignmentValue.Opposed));
 
     // Indexer config
     TalonFXConfiguration indexerConfig = new TalonFXConfiguration();
@@ -105,6 +107,7 @@ public class ShooterIOTalonFX implements ShooterIO {
     indexer1Velocity = indexer1.getVelocity();
     indexer2Velocity = indexer2.getVelocity();
     hoodPosition = hoodEncoder.getAbsolutePosition();
+    indexer1TorqueCurrent = indexer1.getTorqueCurrent();
 
     BaseStatusSignal.setUpdateFrequencyForAll(
         50.0,
@@ -114,7 +117,8 @@ public class ShooterIOTalonFX implements ShooterIO {
         rightTopVelocity,
         indexer1Velocity,
         indexer2Velocity,
-        hoodPosition);
+        hoodPosition,
+        indexer1TorqueCurrent);
   }
 
   @Override
@@ -126,7 +130,8 @@ public class ShooterIOTalonFX implements ShooterIO {
         rightTopVelocity,
         indexer1Velocity,
         indexer2Velocity,
-        hoodPosition);
+        hoodPosition,
+        indexer1TorqueCurrent);
 
     inputs.leftBottomVelocityRps = leftBottomVelocity.getValueAsDouble();
     inputs.leftTopVelocityRps = leftTopVelocity.getValueAsDouble();
@@ -138,6 +143,7 @@ public class ShooterIOTalonFX implements ShooterIO {
 
     inputs.hoodAngleRads =
         (hoodPosition.getValueAsDouble() * 1.0 * 2 * Math.PI) - Math.toRadians(-32);
+    inputs.indexer1TorqueCurrent = indexer1TorqueCurrent.getValueAsDouble();
   }
 
   @Override

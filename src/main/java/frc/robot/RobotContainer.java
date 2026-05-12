@@ -15,8 +15,10 @@ import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.SuperstructureCommands;
 import frc.robot.generated.TunerConstants;
@@ -53,6 +55,7 @@ public class RobotContainer {
   private final Shooter shooter;
   private final Serializer serializer;
   private final Vision vision;
+  private final frc.robot.subsystems.superstructure.Superstructure superstructureSubsystem;
   private final SuperstructureCommands superstructure;
 
   // Controller
@@ -116,7 +119,9 @@ public class RobotContainer {
         break;
     }
 
-    superstructure = new SuperstructureCommands(intake, shooter, serializer);
+    superstructureSubsystem =
+        new frc.robot.subsystems.superstructure.Superstructure(intake, serializer, shooter, drive);
+    superstructure = new SuperstructureCommands(superstructureSubsystem, drive);
 
     // Register named commands for PathPlanner/Choreo
     NamedCommands.registerCommand("INTAKE", superstructure.intakeFuelCommand());
@@ -125,22 +130,10 @@ public class RobotContainer {
 
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
-
-    // Set up SysId routines
-    autoChooser.addOption(
-        "Drive Wheel Radius Characterization", DriveCommands.wheelRadiusCharacterization(drive));
-    autoChooser.addOption(
-        "Drive Simple FF Characterization", DriveCommands.feedforwardCharacterization(drive));
-    autoChooser.addOption(
-        "Drive SysId (Quasistatic Forward)",
-        drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-    autoChooser.addOption(
-        "Drive SysId (Quasistatic Reverse)",
-        drive.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-    autoChooser.addOption(
-        "Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
-    autoChooser.addOption(
-        "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+    autoChooser.addOption("Left Aggressive", buildLeftAggressive());
+    autoChooser.addOption("Left Safe", buildLeftSafe());
+    autoChooser.addOption("Right Aggressive", buildRightAggressive());
+    autoChooser.addOption("Right Safe", buildRightSafe());
 
     // Configure the button bindings
     configureButtonBindings();
@@ -199,5 +192,69 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     return autoChooser.get();
+  }
+
+  private Command buildLeftAggressive() {
+    return new SequentialCommandGroup(
+        new ParallelCommandGroup(
+            drive.followChoreoTrajectory("LAG1U", true), superstructure.intakeFuelCommand()),
+        new ParallelCommandGroup(drive.bumpCommand(-3.3, 3.0), superstructure.intakeFuelCommand()),
+        superstructure.shootFuelCommand(2.5).withTimeout(4.0),
+        new ParallelCommandGroup(
+            drive.goToPose(new Pose2d(2.5, 7.51, Rotation2d.fromDegrees(0))),
+            superstructure.intakeFuelCommand()),
+        new ParallelCommandGroup(
+            drive.followChoreoTrajectory("LAG5", false), superstructure.intakeFuelCommand()),
+        new ParallelCommandGroup(drive.bumpCommand(-3.3, 3.0), superstructure.intakeFuelCommand()),
+        drive.goToRotation(Rotation2d.fromDegrees(143)),
+        superstructure.shootFuelCommand(2.5).withTimeout(3.0));
+  }
+
+  private Command buildLeftSafe() {
+    return new SequentialCommandGroup(
+        new ParallelCommandGroup(
+            drive.followChoreoTrajectory("LSAT1U", true), superstructure.intakeFuelCommand()),
+        new ParallelCommandGroup(drive.bumpCommand(-3.3, 3.2), superstructure.intakeFuelCommand()),
+        superstructure.shootFuelCommand(2.5).withTimeout(4.0),
+        new ParallelCommandGroup(
+            drive.goToPose(new Pose2d(2.5, 7.51, Rotation2d.fromDegrees(0))),
+            superstructure.intakeFuelCommand()),
+        new ParallelCommandGroup(
+            drive.followChoreoTrajectory("LAG5", false), superstructure.intakeFuelCommand()),
+        new ParallelCommandGroup(drive.bumpCommand(-3.3, 3.0), superstructure.intakeFuelCommand()),
+        superstructure.shootFuelCommand(2.5).withTimeout(5.0));
+  }
+
+  private Command buildRightAggressive() {
+    return new SequentialCommandGroup(
+        new ParallelCommandGroup(
+            drive.followChoreoTrajectory("RAG1U", true), superstructure.intakeFuelCommand()),
+        new ParallelCommandGroup(drive.bumpCommand(-2.6, 3.2), superstructure.intakeFuelCommand()),
+        new WaitCommand(4.0),
+        superstructure.shootFuelCommand(2.5).withTimeout(4.0),
+        new ParallelCommandGroup(
+            drive.goToPose(new Pose2d(2.95, 0.5, Rotation2d.fromDegrees(0))),
+            superstructure.intakeFuelCommand()),
+        new ParallelCommandGroup(
+            drive.followChoreoTrajectory("RAG5", false), superstructure.intakeFuelCommand()),
+        new ParallelCommandGroup(drive.bumpCommand(-3.3, 3.0), superstructure.intakeFuelCommand()),
+        drive.goToRotation(Rotation2d.fromDegrees(226)),
+        new WaitCommand(3.0),
+        superstructure.shootFuelCommand(2.5).withTimeout(3.0));
+  }
+
+  private Command buildRightSafe() {
+    return new SequentialCommandGroup(
+        new ParallelCommandGroup(
+            drive.followChoreoTrajectory("RSAT1U", true), superstructure.intakeFuelCommand()),
+        new ParallelCommandGroup(drive.bumpCommand(-3.3, 3.2), superstructure.intakeFuelCommand()),
+        superstructure.shootFuelCommand(2.5).withTimeout(4.0),
+        new ParallelCommandGroup(
+            drive.goToPose(new Pose2d(2.5, 0.5, Rotation2d.fromDegrees(0))),
+            superstructure.intakeFuelCommand()),
+        new ParallelCommandGroup(
+            drive.followChoreoTrajectory("RAG5", false), superstructure.intakeFuelCommand()),
+        new ParallelCommandGroup(drive.bumpCommand(-3.3, 3.0), superstructure.intakeFuelCommand()),
+        superstructure.shootFuelCommand(2.5).withTimeout(5.0));
   }
 }
