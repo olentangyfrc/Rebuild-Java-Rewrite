@@ -9,6 +9,7 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -67,9 +68,9 @@ public class ShooterIOTalonFX implements ShooterIO {
     rightBottom.getConfigurator().apply(shootConfig);
     rightTop.getConfigurator().apply(shootConfig);
 
-    leftTop.setControl(new Follower(23, false));
-    rightBottom.setControl(new Follower(23, true));
-    rightTop.setControl(new Follower(23, true));
+    leftTop.setControl(new Follower(23, MotorAlignmentValue.Aligned));
+    rightBottom.setControl(new Follower(23, MotorAlignmentValue.Opposed));
+    rightTop.setControl(new Follower(23, MotorAlignmentValue.Opposed));
 
     // Indexer config
     TalonFXConfiguration indexerConfig = new TalonFXConfiguration();
