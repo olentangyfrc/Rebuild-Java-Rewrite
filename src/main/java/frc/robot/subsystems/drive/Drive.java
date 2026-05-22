@@ -36,7 +36,9 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.Constants.Mode;
 import frc.robot.generated.TunerConstants;
@@ -57,7 +59,6 @@ public class Drive extends SubsystemBase {
           Math.max(
               Math.hypot(TunerConstants.BackLeft.LocationX, TunerConstants.BackLeft.LocationY),
               Math.hypot(TunerConstants.BackRight.LocationX, TunerConstants.BackRight.LocationY)));
-  public static final Translation2d HUB_LOCATION = new Translation2d(4.6, 4.0);
 
   // PathPlanner config constants
   private static final double ROBOT_MASS_KG = 74.088;
@@ -81,6 +82,7 @@ public class Drive extends SubsystemBase {
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
   private final Module[] modules = new Module[4]; // FL, FR, BL, BR
+  private final SysIdRoutine sysId;
   private final Alert gyroDisconnectedAlert =
       new Alert("Disconnected gyro, using kinematics as fallback.", AlertType.kError);
 
@@ -134,6 +136,17 @@ public class Drive extends SubsystemBase {
         (targetPose) -> {
           Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
         });
+
+    // Configure SysId
+    sysId =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                null,
+                null,
+                null,
+                (state) -> Logger.recordOutput("Drive/SysIdState", state.toString())),
+            new SysIdRoutine.Mechanism(
+                (voltage) -> runCharacterization(voltage.in(Volts)), null, this));
   }
 
   @Override
@@ -219,111 +232,14 @@ public class Drive extends SubsystemBase {
     Logger.recordOutput("SwerveStates/SetpointsOptimized", setpointStates);
   }
 
+  /** Runs the drive in a straight line with the specified drive output. */
+  public void runCharacterization(double output) {
+    for (int i = 0; i < 4; i++) {
+      modules[i].runCharacterization(output);
+    }
+  }
+
   /** Stops the drive. */
-  /**
-   * Returns a command that follows a Choreo trajectory.
-   *
-   * @param trajectoryName The name of the trajectory file (without .traj)
-   * @param resetOdometry Whether to reset odometry to the start of the trajectory
-   * @return A command to follow the trajectory
-   */
-  public edu.wpi.first.wpilibj2.command.Command followChoreoTrajectory(
-      String trajectoryName, boolean resetOdometry) {
-    try {
-      return com.pathplanner.lib.auto.AutoBuilder.followPath(
-          com.pathplanner.lib.path.PathPlannerPath.fromChoreoTrajectory(trajectoryName));
-    } catch (Exception e) {
-      edu.wpi.first.wpilibj.DriverStation.reportError(
-          "Failed to load Choreo trajectory: " + trajectoryName, e.getStackTrace());
-      return edu.wpi.first.wpilibj2.command.Commands.none();
-    }
-  }
-
-  public Rotation2d getPassAngle() {
-    Pose2d pose = getPose();
-    double targetX, targetY;
-    if (pose.getX() < 11.2) {
-      targetX = 3.2;
-      if (pose.getY() < 3.45) targetY = 1.5;
-      else if (pose.getY() > 4.65) targetY = 8.0137 - 1.5;
-      else if (pose.getY() < 4.0) targetY = 1.4;
-      else targetY = 6.5;
-    } else {
-      targetX = 5.67;
-      if (pose.getY() < 3.45) targetY = 2.5;
-      else if (pose.getY() > 4.65) targetY = 8.0137 - 2.5;
-      else if (pose.getY() < 4.0) {
-        targetX = 10.0;
-        targetY = 1.4;
-      } else {
-        targetX = 10.0;
-        targetY = 6.5;
-      }
-    }
-    return new Translation2d(targetX, targetY)
-        .minus(pose.getTranslation())
-        .getAngle()
-        .plus(Rotation2d.fromDegrees(180));
-  }
-
-  public double getPassDistance() {
-    Pose2d pose = getPose();
-    double targetX, targetY;
-    if (pose.getX() < 11.2) {
-      targetX = 3.2;
-      if (pose.getY() < 3.45) targetY = 1.5;
-      else if (pose.getY() > 4.65) targetY = 8.0137 - 1.5;
-      else if (pose.getY() < 4.0) targetY = 1.4;
-      else targetY = 6.5;
-    } else {
-      targetX = 5.67;
-      if (pose.getY() < 3.45) targetY = 2.5;
-      else if (pose.getY() > 4.65) targetY = 8.0137 - 2.5;
-      else if (pose.getY() < 4.0) {
-        targetX = 10.0;
-        targetY = 1.4;
-      } else {
-        targetX = 10.0;
-        targetY = 6.5;
-      }
-    }
-    return pose.getTranslation().getDistance(new Translation2d(targetX, targetY));
-  }
-
-  public edu.wpi.first.wpilibj2.command.Command goToPose(Pose2d targetPose) {
-    return run(() -> {
-          ChassisSpeeds speeds =
-              new ChassisSpeeds(
-                  (targetPose.getX() - getPose().getX()) * 3.0,
-                  (targetPose.getY() - getPose().getY()) * 3.0,
-                  targetPose.getRotation().minus(getPose().getRotation()).getRadians() * 3.0);
-          runVelocity(speeds);
-        })
-        .until(() -> getPose().getTranslation().getDistance(targetPose.getTranslation()) < 0.1)
-        .withName("GoToPose");
-  }
-
-  public edu.wpi.first.wpilibj2.command.Command goToRotation(Rotation2d targetRotation) {
-    return run(() -> {
-          double omega = targetRotation.minus(getPose().getRotation()).getRadians() * 5.0;
-          runVelocity(new ChassisSpeeds(0, 0, omega));
-        })
-        .until(() -> Math.abs(targetRotation.minus(getPose().getRotation()).getDegrees()) < 2.0)
-        .withName("GoToRotation");
-  }
-
-  public edu.wpi.first.wpilibj2.command.Command bumpCommand(double speed, double targetX) {
-    return run(() -> {
-          runVelocity(new ChassisSpeeds(speed, 0, 0));
-        })
-        .until(
-            () -> {
-              if (speed > 0) return getPose().getX() > targetX;
-              else return getPose().getX() < targetX;
-            })
-        .withName("Bump");
-  }
-
   public void stop() {
     runVelocity(new ChassisSpeeds());
   }
@@ -341,14 +257,16 @@ public class Drive extends SubsystemBase {
     stop();
   }
 
-  /** Returns the distance to the speaker (Hub) in meters. */
-  public double getDistanceToSpeaker() {
-    return getPose().getTranslation().getDistance(HUB_LOCATION);
+  /** Returns a command to run a quasistatic test in the specified direction. */
+  public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+    return run(() -> runCharacterization(0.0))
+        .withTimeout(1.0)
+        .andThen(sysId.quasistatic(direction));
   }
 
-  /** Returns the angle to the speaker (Hub) as a Rotation2d. */
-  public Rotation2d getAngleToSpeaker() {
-    return HUB_LOCATION.minus(getPose().getTranslation()).getAngle();
+  /** Returns a command to run a dynamic test in the specified direction. */
+  public Command sysIdDynamic(SysIdRoutine.Direction direction) {
+    return run(() -> runCharacterization(0.0)).withTimeout(1.0).andThen(sysId.dynamic(direction));
   }
 
   /** Returns the module states (turn angles and drive velocities) for all of the modules. */
@@ -374,6 +292,24 @@ public class Drive extends SubsystemBase {
   @AutoLogOutput(key = "SwerveChassisSpeeds/Measured")
   private ChassisSpeeds getChassisSpeeds() {
     return kinematics.toChassisSpeeds(getModuleStates());
+  }
+
+  /** Returns the position of each module in radians. */
+  public double[] getWheelRadiusCharacterizationPositions() {
+    double[] values = new double[4];
+    for (int i = 0; i < 4; i++) {
+      values[i] = modules[i].getWheelRadiusCharacterizationPosition();
+    }
+    return values;
+  }
+
+  /** Returns the average velocity of the modules in rotations/sec (Phoenix native units). */
+  public double getFFCharacterizationVelocity() {
+    double output = 0.0;
+    for (int i = 0; i < 4; i++) {
+      output += modules[i].getFFCharacterizationVelocity() / 4.0;
+    }
+    return output;
   }
 
   /** Returns the current odometry pose. */

@@ -8,19 +8,15 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
-import frc.robot.commands.SuperstructureCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
@@ -28,18 +24,6 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOTalonFX;
-import frc.robot.subsystems.intake.Intake;
-import frc.robot.subsystems.intake.IntakeIO;
-import frc.robot.subsystems.intake.IntakeIOTalonFX;
-import frc.robot.subsystems.serializer.Serializer;
-import frc.robot.subsystems.serializer.SerializerIO;
-import frc.robot.subsystems.serializer.SerializerIOTalonFX;
-import frc.robot.subsystems.shooter.Shooter;
-import frc.robot.subsystems.shooter.ShooterIO;
-import frc.robot.subsystems.shooter.ShooterIOTalonFX;
-import frc.robot.subsystems.vision.Vision;
-import frc.robot.subsystems.vision.VisionIO;
-import frc.robot.subsystems.vision.VisionIOLimelight;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -51,14 +35,6 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 public class RobotContainer {
   // Subsystems
   private final Drive drive;
-  private final Intake intake;
-  private final Shooter shooter;
-  private final Serializer serializer;
-
-  @SuppressWarnings("unused")
-  private final Vision vision;
-  private final frc.robot.subsystems.superstructure.Superstructure superstructureSubsystem;
-  private final SuperstructureCommands superstructure;
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
@@ -80,14 +56,24 @@ public class RobotContainer {
                 new ModuleIOTalonFX(TunerConstants.FrontRight),
                 new ModuleIOTalonFX(TunerConstants.BackLeft),
                 new ModuleIOTalonFX(TunerConstants.BackRight));
-        intake = new Intake(new IntakeIOTalonFX());
-        shooter = new Shooter(new ShooterIOTalonFX());
-        serializer = new Serializer(new SerializerIOTalonFX(27, "can0"));
-        vision =
-            new Vision(
-                drive,
-                new VisionIOLimelight("limelight-left"),
-                new VisionIOLimelight("limelight-right"));
+
+        // The ModuleIOTalonFXS implementation provides an example implementation for
+        // TalonFXS controller connected to a CANdi with a PWM encoder. The
+        // implementations
+        // of ModuleIOTalonFX, ModuleIOTalonFXS, and ModuleIOSpark (from the Spark
+        // swerve
+        // template) can be freely intermixed to support alternative hardware
+        // arrangements.
+        // Please see the AdvantageKit template documentation for more information:
+        // https://docs.advantagekit.org/getting-started/template-projects/talonfx-swerve-template#custom-module-implementations
+        //
+        // drive =
+        // new Drive(
+        // new GyroIOPigeon2(),
+        // new ModuleIOTalonFXS(TunerConstants.FrontLeft),
+        // new ModuleIOTalonFXS(TunerConstants.FrontRight),
+        // new ModuleIOTalonFXS(TunerConstants.BackLeft),
+        // new ModuleIOTalonFXS(TunerConstants.BackRight));
         break;
 
       case SIM:
@@ -99,10 +85,6 @@ public class RobotContainer {
                 new ModuleIOSim(TunerConstants.FrontRight),
                 new ModuleIOSim(TunerConstants.BackLeft),
                 new ModuleIOSim(TunerConstants.BackRight));
-        intake = new Intake(new IntakeIO() {});
-        shooter = new Shooter(new ShooterIO() {});
-        serializer = new Serializer(new SerializerIO() {});
-        vision = new Vision(drive, new VisionIO() {}, new VisionIO() {});
         break;
 
       default:
@@ -114,28 +96,27 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {},
                 new ModuleIO() {});
-        intake = new Intake(new IntakeIO() {});
-        shooter = new Shooter(new ShooterIO() {});
-        serializer = new Serializer(new SerializerIO() {});
-        vision = new Vision(drive, new VisionIO() {}, new VisionIO() {});
         break;
     }
 
-    superstructureSubsystem =
-        new frc.robot.subsystems.superstructure.Superstructure(intake, serializer, shooter, drive);
-    superstructure = new SuperstructureCommands(superstructureSubsystem, drive);
-
-    // Register named commands for PathPlanner/Choreo
-    NamedCommands.registerCommand("INTAKE", superstructure.intakeFuelCommand());
-    NamedCommands.registerCommand("SCORE", superstructure.shootFuelCommand(2.5));
-    NamedCommands.registerCommand("STASH", superstructure.stashCommand());
-
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
-    autoChooser.addOption("Left Aggressive", buildLeftAggressive());
-    autoChooser.addOption("Left Safe", buildLeftSafe());
-    autoChooser.addOption("Right Aggressive", buildRightAggressive());
-    autoChooser.addOption("Right Safe", buildRightSafe());
+
+    // Set up SysId routines
+    autoChooser.addOption(
+        "Drive Wheel Radius Characterization", DriveCommands.wheelRadiusCharacterization(drive));
+    autoChooser.addOption(
+        "Drive Simple FF Characterization", DriveCommands.feedforwardCharacterization(drive));
+    autoChooser.addOption(
+        "Drive SysId (Quasistatic Forward)",
+        drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+    autoChooser.addOption(
+        "Drive SysId (Quasistatic Reverse)",
+        drive.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+    autoChooser.addOption(
+        "Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
+    autoChooser.addOption(
+        "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
 
     // Configure the button bindings
     configureButtonBindings();
@@ -179,12 +160,6 @@ public class RobotContainer {
                             new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
                     drive)
                 .ignoringDisable(true));
-
-    // Custom button bindings based on robot.py mapping
-    controller.leftBumper().whileTrue(superstructure.intakeFuelCommand());
-    controller.rightBumper().whileTrue(superstructure.shootFuelCommand(2.5));
-    controller.leftTrigger().whileTrue(superstructure.unjamCommand());
-    controller.rightTrigger().whileTrue(superstructure.ejectFuelCommand());
   }
 
   /**
@@ -194,69 +169,5 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     return autoChooser.get();
-  }
-
-  private Command buildLeftAggressive() {
-    return new SequentialCommandGroup(
-        new ParallelCommandGroup(
-            drive.followChoreoTrajectory("LAG1U", true), superstructure.intakeFuelCommand()),
-        new ParallelCommandGroup(drive.bumpCommand(-3.3, 3.0), superstructure.intakeFuelCommand()),
-        superstructure.shootFuelCommand(2.5).withTimeout(4.0),
-        new ParallelCommandGroup(
-            drive.goToPose(new Pose2d(2.5, 7.51, Rotation2d.fromDegrees(0))),
-            superstructure.intakeFuelCommand()),
-        new ParallelCommandGroup(
-            drive.followChoreoTrajectory("LAG5", false), superstructure.intakeFuelCommand()),
-        new ParallelCommandGroup(drive.bumpCommand(-3.3, 3.0), superstructure.intakeFuelCommand()),
-        drive.goToRotation(Rotation2d.fromDegrees(143)),
-        superstructure.shootFuelCommand(2.5).withTimeout(3.0));
-  }
-
-  private Command buildLeftSafe() {
-    return new SequentialCommandGroup(
-        new ParallelCommandGroup(
-            drive.followChoreoTrajectory("LSAT1U", true), superstructure.intakeFuelCommand()),
-        new ParallelCommandGroup(drive.bumpCommand(-3.3, 3.2), superstructure.intakeFuelCommand()),
-        superstructure.shootFuelCommand(2.5).withTimeout(4.0),
-        new ParallelCommandGroup(
-            drive.goToPose(new Pose2d(2.5, 7.51, Rotation2d.fromDegrees(0))),
-            superstructure.intakeFuelCommand()),
-        new ParallelCommandGroup(
-            drive.followChoreoTrajectory("LAG5", false), superstructure.intakeFuelCommand()),
-        new ParallelCommandGroup(drive.bumpCommand(-3.3, 3.0), superstructure.intakeFuelCommand()),
-        superstructure.shootFuelCommand(2.5).withTimeout(5.0));
-  }
-
-  private Command buildRightAggressive() {
-    return new SequentialCommandGroup(
-        new ParallelCommandGroup(
-            drive.followChoreoTrajectory("RAG1U", true), superstructure.intakeFuelCommand()),
-        new ParallelCommandGroup(drive.bumpCommand(-2.6, 3.2), superstructure.intakeFuelCommand()),
-        new WaitCommand(4.0),
-        superstructure.shootFuelCommand(2.5).withTimeout(4.0),
-        new ParallelCommandGroup(
-            drive.goToPose(new Pose2d(2.95, 0.5, Rotation2d.fromDegrees(0))),
-            superstructure.intakeFuelCommand()),
-        new ParallelCommandGroup(
-            drive.followChoreoTrajectory("RAG5", false), superstructure.intakeFuelCommand()),
-        new ParallelCommandGroup(drive.bumpCommand(-3.3, 3.0), superstructure.intakeFuelCommand()),
-        drive.goToRotation(Rotation2d.fromDegrees(226)),
-        new WaitCommand(3.0),
-        superstructure.shootFuelCommand(2.5).withTimeout(3.0));
-  }
-
-  private Command buildRightSafe() {
-    return new SequentialCommandGroup(
-        new ParallelCommandGroup(
-            drive.followChoreoTrajectory("RSAT1U", true), superstructure.intakeFuelCommand()),
-        new ParallelCommandGroup(drive.bumpCommand(-3.3, 3.2), superstructure.intakeFuelCommand()),
-        superstructure.shootFuelCommand(2.5).withTimeout(4.0),
-        new ParallelCommandGroup(
-            drive.goToPose(new Pose2d(2.5, 0.5, Rotation2d.fromDegrees(0))),
-            superstructure.intakeFuelCommand()),
-        new ParallelCommandGroup(
-            drive.followChoreoTrajectory("RAG5", false), superstructure.intakeFuelCommand()),
-        new ParallelCommandGroup(drive.bumpCommand(-3.3, 3.0), superstructure.intakeFuelCommand()),
-        superstructure.shootFuelCommand(2.5).withTimeout(5.0));
   }
 }
