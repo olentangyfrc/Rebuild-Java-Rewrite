@@ -23,6 +23,7 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -99,6 +100,7 @@ public class Drive extends SubsystemBase {
       };
   private SwerveDrivePoseEstimator poseEstimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, Pose2d.kZero);
+  private Transform2d poseOffset = new Transform2d(); // defaults to zero offset
   private final Field2d field = new Field2d();
 
   public Drive(
@@ -117,6 +119,23 @@ public class Drive extends SubsystemBase {
     HAL.report(tResourceType.kResourceType_RobotDrive, tInstances.kRobotDriveSwerve_AdvantageKit);
 
     SmartDashboard.putData("Field", field);
+
+    // --- Pose Estimator Offset Example ---
+    // Use this to compensate for a consistent positional error in the pose estimator.
+    // For example, if your robot's estimated pose is always 5cm too far forward
+    // and 2cm too far left, apply a corrective offset here:
+    //
+    //   setPoseOffset(-0.05, -0.02, 0.0);
+    //       ▲ xMeters (negative = shift estimate backward)
+    //            ▲ yMeters (negative = shift estimate rightward)
+    //                   ▲ rotationRads (e.g. Math.toRadians(1.0) for 1° CCW correction)
+    //
+    // You can also update the offset at any time from RobotContainer or a command:
+    //   drive.setPoseOffset(xOffset, yOffset, rotOffset);
+    //   drive.clearPoseOffset();  // reset to zero
+    //
+    // Uncomment the line below and set your values:
+    setPoseOffset(0.0, 6.0, 0.0);
 
     // Start odometry thread
     PhoenixOdometryThread.getInstance().start();
@@ -223,6 +242,11 @@ public class Drive extends SubsystemBase {
    */
   public void runVelocity(ChassisSpeeds speeds) {
     // Calculate module setpoints
+    speeds =
+        new ChassisSpeeds(
+            speeds.vxMetersPerSecond * 4.0,
+            speeds.vyMetersPerSecond * 4.0,
+            speeds.omegaRadiansPerSecond * 1.0);
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
     SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, TunerConstants.kSpeedAt12Volts);
@@ -320,10 +344,15 @@ public class Drive extends SubsystemBase {
     return output;
   }
 
-  /** Returns the current odometry pose. */
+  /** Returns the current odometry pose with the configured offset applied. */
   @AutoLogOutput(key = "Odometry/Robot")
   public Pose2d getPose() {
-    return poseEstimator.getEstimatedPosition();
+    Pose2d rawPose = poseEstimator.getEstimatedPosition();
+    Logger.recordOutput("Odometry/RawRobot", rawPose);
+    Logger.recordOutput(
+        "Odometry/PoseOffset",
+        new double[] {poseOffset.getX(), poseOffset.getY(), poseOffset.getRotation().getRadians()});
+    return rawPose.plus(poseOffset);
   }
 
   /** Returns the current odometry rotation. */
@@ -334,6 +363,37 @@ public class Drive extends SubsystemBase {
   /** Resets the current odometry pose. */
   public void setPose(Pose2d pose) {
     poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);
+  }
+
+  /**
+   * Sets the pose estimator offset. This transform is applied on top of the raw estimated pose
+   * every cycle, allowing compensation for sensor mounting offsets or field calibration errors.
+   *
+   * @param xMeters X offset in meters (positive = forward)
+   * @param yMeters Y offset in meters (positive = left)
+   * @param rotationRads Rotation offset in radians (positive = counter-clockwise)
+   */
+  public void setPoseOffset(double xMeters, double yMeters, double rotationRads) {
+    poseOffset = new Transform2d(new Translation2d(xMeters, yMeters), new Rotation2d(rotationRads));
+  }
+
+  /**
+   * Sets the pose estimator offset from a Transform2d.
+   *
+   * @param offset The transform to apply to the raw pose
+   */
+  public void setPoseOffset(Transform2d offset) {
+    poseOffset = offset;
+  }
+
+  /** Returns the current pose estimator offset. */
+  public Transform2d getPoseOffset() {
+    return poseOffset;
+  }
+
+  /** Clears the pose estimator offset (resets to zero). */
+  public void clearPoseOffset() {
+    poseOffset = new Transform2d();
   }
 
   /** Adds a new timestamped vision measurement. */
