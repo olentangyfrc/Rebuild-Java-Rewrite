@@ -244,8 +244,8 @@ public class Drive extends SubsystemBase {
     // Calculate module setpoints
     speeds =
         new ChassisSpeeds(
-            speeds.vxMetersPerSecond * 1.0,
-            speeds.vyMetersPerSecond * 1.0,
+            speeds.vxMetersPerSecond * 4.0,
+            speeds.vyMetersPerSecond * 4.0,
             speeds.omegaRadiansPerSecond * 1.0);
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);

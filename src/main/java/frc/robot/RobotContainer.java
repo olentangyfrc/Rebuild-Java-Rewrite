@@ -17,7 +17,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
-import frc.robot.commands.SerializerCommands;
+import frc.robot.commands.IntakeCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
@@ -25,6 +25,7 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOTalonFX;
+import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.serializer.Serializer;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
@@ -38,6 +39,7 @@ public class RobotContainer {
   // Subsystems
   private final Drive drive;
   private final Serializer serializer;
+  private final Intake intake;
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
@@ -61,6 +63,7 @@ public class RobotContainer {
                 new ModuleIOTalonFX(TunerConstants.BackRight));
 
         serializer = new Serializer();
+        intake = new Intake();
 
         // The ModuleIOTalonFXS implementation provides an example implementation for
         // TalonFXS controller connected to a CANdi with a PWM encoder. The
@@ -92,6 +95,7 @@ public class RobotContainer {
                 new ModuleIOSim(TunerConstants.BackRight));
 
         serializer = new Serializer();
+        intake = new Intake();
         break;
 
       default:
@@ -105,6 +109,7 @@ public class RobotContainer {
                 new ModuleIO() {});
 
         serializer = new Serializer();
+        intake = new Intake();
         break;
     }
 
@@ -146,9 +151,14 @@ public class RobotContainer {
             () -> controller.getLeftX(),
             () -> -controller.getRightX()));
 
-    controller.a().whileTrue(SerializerCommands.startSerializer(serializer));
-    controller.x().whileTrue(SerializerCommands.stopSerializer(serializer));
-    controller.y().whileTrue(SerializerCommands.reverseSerializer(serializer));
+    // controller.a().whileTrue(SerializerCommands.startSerializer(serializer));
+    // controller.x().whileTrue(SerializerCommands.stopSerializer(serializer));
+    // controller.y().whileTrue(SerializerCommands.reverseSerializer(serializer));
+
+    controller.a().onTrue(IntakeCommands.startIntake(intake));
+    controller.b().onTrue(IntakeCommands.stopIntake(intake));
+    controller.x().onTrue(IntakeCommands.ejectIntake(intake));
+    controller.y().onTrue(IntakeCommands.setIntakePosition(intake, 90));
 
     // Lock to 0° when A button is held
 
