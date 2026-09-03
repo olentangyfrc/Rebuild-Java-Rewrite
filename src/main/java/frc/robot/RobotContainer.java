@@ -156,9 +156,9 @@ public class RobotContainer {
     // controller.y().whileTrue(SerializerCommands.reverseSerializer(serializer));
 
     controller.a().onTrue(IntakeCommands.startIntake(intake));
-    controller.b().onTrue(IntakeCommands.stopIntake(intake));
-    controller.x().onTrue(IntakeCommands.ejectIntake(intake));
-    controller.y().onTrue(IntakeCommands.setIntakePosition(intake, 90));
+    controller.b().whileTrue(IntakeCommands.stopIntake(intake));
+    controller.x().whileTrue(IntakeCommands.ejectIntake(intake));
+    controller.y().whileTrue(IntakeCommands.setIntakePosition(intake, 90));
 
     // Lock to 0° when A button is held
 
