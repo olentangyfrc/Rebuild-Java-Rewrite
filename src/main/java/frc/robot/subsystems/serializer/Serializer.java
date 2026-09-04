@@ -30,7 +30,7 @@ public class Serializer extends SubsystemBase {
   }
 
   public void start() {
-    serializerMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(0.3));
+    serializerMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(15.0));
     System.out.println("Serializer started");
   }
 
@@ -40,7 +40,7 @@ public class Serializer extends SubsystemBase {
   }
 
   public void reverse() {
-    serializerMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(-0.3));
+    serializerMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(-15.0));
     System.out.println("Serializer reversing");
   }
 }

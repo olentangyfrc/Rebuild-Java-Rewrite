@@ -16,7 +16,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.commands.DriveCommands;
-import frc.robot.commands.IntakeCommands;
+import frc.robot.commands.SerializerCommands;
+import frc.robot.commands.ShooterCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
@@ -26,6 +27,7 @@ import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOTalonFX;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.serializer.Serializer;
+import frc.robot.subsystems.shooter.Shooter;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -38,6 +40,7 @@ public class RobotContainer {
   // Subsystems
   private final Drive drive;
   private final Serializer serializer;
+  private final Shooter shooter;
   private final Intake intake;
 
   // Controller
@@ -63,6 +66,7 @@ public class RobotContainer {
 
         serializer = new Serializer();
         intake = new Intake();
+        shooter = new Shooter();
 
         // The ModuleIOTalonFXS implementation provides an example implementation for
         // TalonFXS controller connected to a CANdi with a PWM encoder. The
@@ -95,6 +99,7 @@ public class RobotContainer {
 
         serializer = new Serializer();
         intake = new Intake();
+        shooter = new Shooter();
         break;
 
       default:
@@ -109,6 +114,7 @@ public class RobotContainer {
 
         serializer = new Serializer();
         intake = new Intake();
+        shooter = new Shooter();
         break;
     }
 
@@ -138,10 +144,15 @@ public class RobotContainer {
     // controller.x().whileTrue(SerializerCommands.stopSerializer(serializer));
     // controller.y().whileTrue(SerializerCommands.reverseSerializer(serializer));
 
-    controller.a().onTrue(IntakeCommands.startIntake(intake));
-    controller.b().whileTrue(IntakeCommands.stopIntake(intake));
-    controller.x().whileTrue(IntakeCommands.ejectIntake(intake));
-    controller.y().whileTrue(IntakeCommands.setIntakePosition(intake, 90));
+    // controller.a().onTrue(IntakeCommands.startIntake(intake));
+    // controller.b().whileTrue(IntakeCommands.stopIntake(intake));
+    // controller.x().whileTrue(IntakeCommands.ejectIntake(intake));
+    // controller.y().whileTrue(IntakeCommands.setIntakePosition(intake, 90));
+
+    controller.a().whileTrue(ShooterCommands.spinUp(shooter));
+    controller.b().whileTrue(ShooterCommands.stop(shooter));
+    controller.y().whileTrue(SerializerCommands.startSerializer(serializer));
+    controller.x().whileTrue(SerializerCommands.stopSerializer(serializer));
 
     // Lock to 0° when A button is held
 
