@@ -132,6 +132,10 @@ public class Shooter extends SubsystemBase {
     return Math.toRadians(hoodEncoder.getAbsolutePosition().getValueAsDouble() * 360);
   }
 
+  public boolean isDrumAtSpeed() {
+    return leftTopDrumLeader.getClosedLoopError().getValueAsDouble() < .1;
+  }
+
   public void setHoodSetPoint(double hoodSetPoint) {
     hoodTargetAngle = MathUtil.clamp(hoodSetPoint, Math.toRadians(2), Math.toRadians(47));
   }

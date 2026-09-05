@@ -29,6 +29,7 @@ import frc.robot.subsystems.drive.ModuleIOTalonFX;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.serializer.Serializer;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.vision.Vision;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -43,6 +44,7 @@ public class RobotContainer {
   private final Serializer serializer;
   private final Shooter shooter;
   private final Intake intake;
+  private Vision vision;
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
@@ -101,6 +103,7 @@ public class RobotContainer {
         serializer = new Serializer();
         intake = new Intake();
         shooter = new Shooter();
+        vision = new Vision(drive);
         break;
 
       default:
@@ -119,6 +122,8 @@ public class RobotContainer {
         break;
     }
 
+    vision = new Vision(drive);
+    vision.setup();
     shooter.init();
     serializer.init();
     intake.init();
