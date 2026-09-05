@@ -21,6 +21,9 @@ public class Intake extends SubsystemBase {
   private final int pivotMotorCanId = 30;
   private final int pivotEncoderCanId = 51; // Replace with the actual pivot motor port number
 
+  private final double pivotGearRatio = 1 / 2.75;
+  private final double encoderOffset = 14; // Replace with the actual encoder offset
+
   private TalonFX leaderMotor;
   private TalonFX followerMotor;
   private TalonFX pivotMotor;
@@ -73,7 +76,11 @@ public class Intake extends SubsystemBase {
   }
 
   public double getPivotAngle() {
-    angle = Math.toRadians(pivotEncoder.getAbsolutePosition().getValueAsDouble() * 360);
+    double angle =
+        (Math.toRadians(pivotEncoder.getAbsolutePosition().getValueAsDouble() * 360)
+                * pivotGearRatio
+            - Math.toRadians(encoderOffset));
+
     if (angle < Math.toRadians(-15)) angle += Math.toRadians(159.8);
     return angle;
   }
@@ -82,13 +89,21 @@ public class Intake extends SubsystemBase {
     pivotTargetAngle = MathUtil.clamp(pivotSetPoint, Math.toRadians(0.5), Math.toRadians(116));
   }
 
+  static double lastAngle = 0;
+
   public void periodic() {
     pivotMotor.setControl(
         new com.ctre.phoenix6.controls.VoltageOut(
             pivotPIDController.calculate(getPivotAngle(), pivotTargetAngle)
                 + pivotFFWController.calculate(getPivotAngle(), 0)));
 
-    System.out.println(Math.toDegrees(getPivotAngle()));
+    // Logger.getLogger("Pivot Angle: " + Math.toDegrees(getPivotAngle()));
+    // System.out.println(Math.toDegrees(getPivotAngle()));
+
+    // if (getPivotAngle() - lastAngle > Math.toRadians(1)) {
+    //   System.out.println("Pivot Angle: " + Math.toDegrees(getPivotAngle()));
+    //   lastAngle = getPivotAngle();
+    // }
   }
 
   public void start() {
