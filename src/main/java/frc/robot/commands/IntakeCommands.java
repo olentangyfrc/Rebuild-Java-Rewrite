@@ -8,10 +8,10 @@ public class IntakeCommands {
 
   Intake intake;
 
-  public static Command setIntakePosition(Intake intake, double position) {
+  public static Command setPivotAngle(Intake intake, double pivotAngle) {
     return Commands.run(
         () -> {
-          intake.setPosition(position);
+          intake.setPivotSetPoint(pivotAngle);
         },
         intake);
   }

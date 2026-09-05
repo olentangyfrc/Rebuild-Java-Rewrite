@@ -3,8 +3,12 @@ package frc.robot.subsystems.intake;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.hardware.*;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.ArmFeedforward;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Intake extends SubsystemBase {
@@ -14,11 +18,19 @@ public class Intake extends SubsystemBase {
 
   private final int leaderMotorCanId = 28; // Replace with the actual leader motor port number
   private final int followerMotorCanId = 29; // Replace with the actual follower motor
-  private final int pivotMotorCanId = 30; // Replace with the actual pivot motor port number
+  private final int pivotMotorCanId = 30;
+  private final int pivotEncoderCanId = 51; // Replace with the actual pivot motor port number
 
   private TalonFX leaderMotor;
   private TalonFX followerMotor;
   private TalonFX pivotMotor;
+  private CANcoder pivotEncoder;
+
+  private PIDController pivotPIDController;
+  private ArmFeedforward pivotFFWController;
+  private double pivotTargetAngle;
+
+  private double angle;
 
   public void init() {
 
@@ -40,7 +52,8 @@ public class Intake extends SubsystemBase {
     followerMotor.setControl(new Follower(leaderMotorCanId, MotorAlignmentValue.Opposed));
 
     pivotConfiguration = new TalonFXConfiguration();
-    pivotConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    pivotConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+    pivotConfiguration.MotorOutput.withInverted(InvertedValue.Clockwise_Positive);
     pivotMotor.getConfigurator().apply(pivotConfiguration, 0.25);
   }
 
@@ -49,10 +62,33 @@ public class Intake extends SubsystemBase {
     leaderMotor = new TalonFX(leaderMotorCanId, "can0");
     followerMotor = new TalonFX(followerMotorCanId, "can0");
     pivotMotor = new TalonFX(pivotMotorCanId, "can0");
+    pivotEncoder = new CANcoder(pivotEncoderCanId, "can0");
+
+    pivotPIDController = new PIDController(4, 0, 0.1);
+    pivotFFWController = new ArmFeedforward(0.1, 0.42, 0);
+    pivotPIDController.setTolerance(Math.toRadians(5));
+    // pivotPIDController.setIZone(Math.toRadians(0));
+    // pivotPIDController.setSetpoint(Math.toRadians(0));
+    pivotPIDController.reset();
   }
 
-  public void setPosition(double position) {
-    System.out.println("Intake pivot:" + position);
+  public double getPivotAngle() {
+    angle = Math.toRadians(pivotEncoder.getAbsolutePosition().getValueAsDouble() * 360);
+    if (angle < Math.toRadians(-15)) angle += Math.toRadians(159.8);
+    return angle;
+  }
+
+  public void setPivotSetPoint(double pivotSetPoint) {
+    pivotTargetAngle = MathUtil.clamp(pivotSetPoint, Math.toRadians(0.5), Math.toRadians(116));
+  }
+
+  public void periodic() {
+    pivotMotor.setControl(
+        new com.ctre.phoenix6.controls.VoltageOut(
+            pivotPIDController.calculate(getPivotAngle(), pivotTargetAngle)
+                + pivotFFWController.calculate(getPivotAngle(), 0)));
+
+    System.out.println(Math.toDegrees(getPivotAngle()));
   }
 
   public void start() {

@@ -161,7 +161,7 @@ public class RobotContainer {
     controller.b().onTrue(IntakeCommands.startIntake(intake));
     controller.x().whileTrue(IntakeCommands.stopIntake(intake));
     controller.rightBumper().onTrue(ShooterCommands.setHoodAngle(shooter, Math.toRadians(20)));
-    controller.leftBumper().onTrue(ShooterCommands.setHoodAngle(shooter, Math.toRadians(5)));
+    controller.leftBumper().onTrue(IntakeCommands.setPivotAngle(intake, Math.toRadians(5)));
 
     // Lock to 0° when A button is held
 
