@@ -49,7 +49,6 @@ public class Intake extends SubsystemBase {
     leaderMotor = new TalonFX(leaderMotorCanId, "can0");
     followerMotor = new TalonFX(followerMotorCanId, "can0");
     pivotMotor = new TalonFX(pivotMotorCanId, "can0");
-    init();
   }
 
   public void setPosition(double position) {
@@ -57,7 +56,7 @@ public class Intake extends SubsystemBase {
   }
 
   public void start() {
-    leaderMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(-10.0));
+    leaderMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(-30.0));
     System.out.println("Intake started");
   }
 
@@ -67,7 +66,7 @@ public class Intake extends SubsystemBase {
   }
 
   public void eject() {
-    leaderMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(10.0));
+    leaderMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(30.0));
     System.out.println("Intake ejecting");
   }
 

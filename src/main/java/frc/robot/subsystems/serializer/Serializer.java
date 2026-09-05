@@ -26,7 +26,6 @@ public class Serializer extends SubsystemBase {
 
   public Serializer() {
     serializerMotor = new TalonFX(motorcan, "can0");
-    init();
   }
 
   public void start() {

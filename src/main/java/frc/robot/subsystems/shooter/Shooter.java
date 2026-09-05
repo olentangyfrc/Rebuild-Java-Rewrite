@@ -8,6 +8,9 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.ArmFeedforward;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Shooter extends SubsystemBase {
@@ -19,6 +22,11 @@ public class Shooter extends SubsystemBase {
   private TalonFX indexerTunnel;
   private TalonFX hoodMotor;
   private CANcoder hoodEncoder;
+
+  private PIDController hoodPIDController;
+  private ArmFeedforward hoodFFWController;
+  private double hoodTargetAngle;
+  private double hoodSetPoint;
 
   private TalonFXConfiguration leftTopDrumLeaderConfig;
   private TalonFXConfiguration commonDrumFollowerConfig;
@@ -49,7 +57,12 @@ public class Shooter extends SubsystemBase {
 
     hoodEncoder = new CANcoder(hoodEncoderCanId, "can0");
 
-    init();
+    hoodPIDController = new PIDController(5.2, 0, 0);
+    hoodFFWController = new ArmFeedforward(0.04, 0.29, 0);
+    hoodPIDController.setTolerance(Math.toRadians(0.5)); // min-max hood angle: 2 - 47
+    hoodPIDController.setIZone(Math.toRadians(0.5));
+    hoodPIDController.setSetpoint(Math.toRadians(3));
+    hoodPIDController.reset();
   }
 
   public void init() {
@@ -115,10 +128,25 @@ public class Shooter extends SubsystemBase {
     hoodMotor.getConfigurator().apply(hoodMotorConfig, 0.25);
   }
 
+  public double getHoodAngle() {
+    return Math.toRadians(hoodEncoder.getAbsolutePosition().getValueAsDouble() * 360);
+  }
+
+  public void setHoodSetPoint(double hoodSetPoint) {
+    hoodTargetAngle = MathUtil.clamp(hoodSetPoint, Math.toRadians(2), Math.toRadians(47));
+  }
+
+  public void periodic() {
+    hoodMotor.setControl(
+        new com.ctre.phoenix6.controls.VoltageOut(
+            hoodPIDController.calculate(getHoodAngle(), hoodTargetAngle)
+                + hoodFFWController.calculate(getHoodAngle(), 0)));
+  }
+
   public void spinUp() {
     System.out.println("Spin Upping");
     leftTopDrumLeader.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(15.0));
-    indexerFeeder.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(30.0));
+    indexerFeeder.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(50.0));
     indexerTunnel.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(30.0));
   }
 

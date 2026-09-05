@@ -23,4 +23,12 @@ public class ShooterCommands {
         },
         shooter);
   }
+
+  public static Command setHoodAngle(Shooter shooter, double hoodAngle) {
+    return Commands.run(
+        () -> {
+          shooter.setHoodSetPoint(hoodAngle);
+        },
+        shooter);
+  }
 }
