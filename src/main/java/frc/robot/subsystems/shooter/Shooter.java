@@ -129,7 +129,7 @@ public class Shooter extends SubsystemBase {
   }
 
   public double getHoodAngle() {
-    return Math.toRadians(hoodEncoder.getAbsolutePosition().getValueAsDouble() * 360);
+    return Math.toRadians((hoodEncoder.getAbsolutePosition().getValueAsDouble() * 360) + 31);
   }
 
   public void setHoodSetPoint(double hoodSetPoint) {

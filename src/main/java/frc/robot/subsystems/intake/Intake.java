@@ -55,7 +55,7 @@ public class Intake extends SubsystemBase {
     followerMotor.setControl(new Follower(leaderMotorCanId, MotorAlignmentValue.Opposed));
 
     pivotConfiguration = new TalonFXConfiguration();
-    pivotConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+    pivotConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     pivotConfiguration.MotorOutput.withInverted(InvertedValue.Clockwise_Positive);
     pivotMotor.getConfigurator().apply(pivotConfiguration, 0.25);
   }
@@ -86,7 +86,7 @@ public class Intake extends SubsystemBase {
   }
 
   public void setPivotSetPoint(double pivotSetPoint) {
-    pivotTargetAngle = MathUtil.clamp(pivotSetPoint, Math.toRadians(0.5), Math.toRadians(116));
+    pivotTargetAngle = MathUtil.clamp(pivotSetPoint, Math.toRadians(0.5), Math.toRadians(125));
   }
 
   static double lastAngle = 0;
