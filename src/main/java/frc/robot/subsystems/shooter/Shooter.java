@@ -144,6 +144,10 @@ public class Shooter extends SubsystemBase {
   }
 
   // Set hood in degress 2 - 47 Degrees
+  public boolean isDrumAtSpeed() {
+    return leftTopDrumLeader.getClosedLoopError().getValueAsDouble() < .1;
+  }
+
   public void setHoodSetPoint(double hoodSetPoint) {
     hoodTargetAngle = MathUtil.clamp(hoodSetPoint, Math.toRadians(2), Math.toRadians(47));
   }
