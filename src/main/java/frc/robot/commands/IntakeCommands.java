@@ -8,10 +8,10 @@ public class IntakeCommands {
 
   Intake intake;
 
-  public static Command setIntakePosition(Intake intake, double position) {
+  public static Command setPivotAngle(Intake intake, double pivotAngle) {
     return Commands.run(
         () -> {
-          intake.setPosition(position);
+          intake.setPivotSetPoint(pivotAngle);
         },
         intake);
   }
@@ -20,6 +20,22 @@ public class IntakeCommands {
     return Commands.run(
         () -> {
           intake.start();
+        },
+        intake);
+  }
+
+  public static Command startagitationIntake(Intake intake) {
+    return Commands.run(
+        () -> {
+          intake.setIntakeAgitation(true);
+        },
+        intake);
+  }
+
+  public static Command stopagitationIntake(Intake intake) {
+    return Commands.run(
+        () -> {
+          intake.setIntakeAgitation(false);
         },
         intake);
   }

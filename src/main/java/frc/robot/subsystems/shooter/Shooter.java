@@ -44,6 +44,13 @@ public class Shooter extends SubsystemBase {
   private final int hoodMotorCanId = 26;
   private final int hoodEncoderCanId = 47;
 
+  private double drumTargetVelocityTolerance = 1.0; // rps
+
+  private double spinUpVelocity = 2000; // rpm
+  private double maxdrumVelocity = 4000; // RPM
+
+  private final boolean lowCeiling = false;
+
   public Shooter() {
     leftTopDrumLeader = new TalonFX(leftTopDrumLeaderCanId, "can0");
     leftBottomDrumFollower = new TalonFX(leftBottomDrumFollowerCanId, "can0");
@@ -128,10 +135,15 @@ public class Shooter extends SubsystemBase {
     hoodMotor.getConfigurator().apply(hoodMotorConfig, 0.25);
   }
 
-  public double getHoodAngle() {
-    return Math.toRadians(hoodEncoder.getAbsolutePosition().getValueAsDouble() * 360);
+  public boolean isHoodAtSetPoint() {
+    return hoodPIDController.atSetpoint();
   }
 
+  public double getHoodAngle() {
+    return Math.toRadians((hoodEncoder.getAbsolutePosition().getValueAsDouble() * 360) + 31);
+  }
+
+  // Set hood in degress 2 - 47 Degrees
   public boolean isDrumAtSpeed() {
     return leftTopDrumLeader.getClosedLoopError().getValueAsDouble() < .1;
   }
@@ -147,15 +159,58 @@ public class Shooter extends SubsystemBase {
                 + hoodFFWController.calculate(getHoodAngle(), 0)));
   }
 
-  public void spinUp() {
-    System.out.println("Spin Upping");
-    leftTopDrumLeader.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(15.0));
-    indexerFeeder.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(50.0));
-    indexerTunnel.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(30.0));
+  // Returns a true of false when the drum is at speed
+  public boolean isdrumAtSpeed() {
+    return leftTopDrumLeader.getClosedLoopError().getValueAsDouble() < drumTargetVelocityTolerance;
   }
 
+  public void spinUpDrum() {
+    setDrumVelocity(spinUpVelocity);
+  }
+
+  // Set drum speed to a specific velocity in RPM
+  public void setDrumVelocity(double velocity) {
+    if (!lowCeiling) {
+      leftTopDrumLeader.setControl(
+          new com.ctre.phoenix6.controls.VelocityVoltage(
+              MathUtil.clamp((velocity / 60), 0, (maxdrumVelocity / 60))));
+    } else if (lowCeiling) {
+      leftTopDrumLeader.setControl(
+          new com.ctre.phoenix6.controls.VelocityVoltage(
+              MathUtil.clamp((velocity / 60), 0, ((maxdrumVelocity / 60) / 3))));
+    }
+  }
+
+  // Sets Feeder PID velocity to 0
+  public void HoldFeeder() {
+    indexerFeeder.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(0));
+  }
+  // Sets Tunnel PID velocity to 0
+  public void HoldTunnel() {
+    indexerTunnel.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(0));
+  }
+
+  // Set Tunnel Velocity in RPM
+  public void setTunnelVelocity(double velocity) {
+    indexerTunnel.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(velocity / 60));
+  }
+
+  // Set Feeder Velocity in RPM
+  public void setFeederVelocity(double velocity) {
+    indexerFeeder.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(velocity / 60));
+  }
+
+  // Sets Voltage out for Tunnel to 0 (roll to stop)
+  public void stopTunnel() {
+    indexerTunnel.setControl(new com.ctre.phoenix6.controls.VoltageOut(0));
+  }
+  // Sets Voltage out for Feeder to 0 (roll to stop)
+  public void stopFeeder() {
+    indexerTunnel.setControl(new com.ctre.phoenix6.controls.VoltageOut(0));
+  }
+
+  // Sets all Voltages for indexer,feeder and drum to 0 (roll to stop)
   public void stop() {
-    System.out.println("Spin Downing");
     leftTopDrumLeader.setControl(new com.ctre.phoenix6.controls.VoltageOut(0.0));
     indexerFeeder.setControl(new com.ctre.phoenix6.controls.VoltageOut(0.0));
     indexerTunnel.setControl(new com.ctre.phoenix6.controls.VoltageOut(0.0));

@@ -16,8 +16,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.commands.DriveCommands;
-import frc.robot.commands.IntakeCommands;
-import frc.robot.commands.SerializerCommands;
 import frc.robot.commands.ShooterCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.Drive;
@@ -159,14 +157,16 @@ public class RobotContainer {
     // controller.x().whileTrue(IntakeCommands.ejectIntake(intake));
     // controller.y().whileTrue(IntakeCommands.setIntakePosition(intake, 90));
 
-    controller.rightTrigger().onTrue(ShooterCommands.spinUp(shooter));
-    controller.a().whileTrue(ShooterCommands.stop(shooter));
-    controller.y().whileTrue(SerializerCommands.startSerializer(serializer));
-    controller.x().whileTrue(SerializerCommands.stopSerializer(serializer));
-    controller.b().onTrue(IntakeCommands.startIntake(intake));
-    controller.x().whileTrue(IntakeCommands.stopIntake(intake));
-    controller.rightBumper().onTrue(ShooterCommands.setHoodAngle(shooter, Math.toRadians(20)));
-    controller.leftBumper().onTrue(ShooterCommands.setHoodAngle(shooter, Math.toRadians(5)));
+    // controller.rightTrigger().onTrue(ShooterCommands.spinUp(shooter, 0));
+    // controller.a().whileTrue(ShooterCommands.stop(shooter));
+    // controller.y().whileTrue(SerializerCommands.startSerializer(serializer));
+    // controller.x().whileTrue(SerializerCommands.stopSerializer(serializer));
+    controller.a().onTrue(ShooterCommands.stop(shooter));
+    controller.y().onTrue(ShooterCommands.spinUpDrum(shooter));
+    // controller.b().onTrue(IntakeCommands.startagitationIntake(intake));
+    // controller.x().whileTrue(IntakeCommands.stopagitationIntake(intake));
+    // controller.rightBumper().onTrue(ShooterCommands.setHoodAngle(shooter, Math.toRadians(47)));
+    // controller.leftBumper().onTrue(ShooterCommands.setHoodAngle(shooter, Math.toRadians(2)));
 
     // Lock to 0° when A button is held
 
