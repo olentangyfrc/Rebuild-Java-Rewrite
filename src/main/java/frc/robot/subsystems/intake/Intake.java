@@ -9,6 +9,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Intake extends SubsystemBase {
@@ -34,6 +35,9 @@ public class Intake extends SubsystemBase {
   private double pivotTargetAngle;
 
   private double angle;
+
+  private final Timer agitationTimer = new Timer();
+  private boolean isAgitating = false;
 
   public void init() {
 
@@ -84,6 +88,37 @@ public class Intake extends SubsystemBase {
     if (angle < Math.toRadians(-15)) angle += Math.toRadians(159.8);
     return angle;
   }
+  // starts intake to Agitation (U will lost setPoint Control During this)
+  public void setIntakeAgitation(boolean ON) {
+    if (ON) {
+      if (!isAgitating) {
+        agitationTimer.restart();
+        isAgitating = true;
+        start();
+        ;
+      }
+
+      double time = agitationTimer.get();
+
+      if (time < 0.65) {
+        setPivotSetPoint(Math.toRadians(25));
+      } else if (time < 1.0) {
+        setPivotSetPoint(Math.toRadians(60));
+      } else if (time < 1.5) {
+        setPivotSetPoint(Math.toRadians(125));
+      } else {
+        agitationTimer.restart(); // Loop the sequence back to the beginning
+      }
+    } else {
+      if (isAgitating) {
+        agitationTimer.stop();
+        agitationTimer.reset();
+        isAgitating = false;
+        setPivotSetPoint(0);
+        intakeIdle();
+      }
+    }
+  }
 
   public void setPivotSetPoint(double pivotSetPoint) {
     pivotTargetAngle = MathUtil.clamp(pivotSetPoint, Math.toRadians(0.5), Math.toRadians(125));
@@ -96,32 +131,26 @@ public class Intake extends SubsystemBase {
         new com.ctre.phoenix6.controls.VoltageOut(
             pivotPIDController.calculate(getPivotAngle(), pivotTargetAngle)
                 + pivotFFWController.calculate(getPivotAngle(), 0)));
+  }
 
-    // Logger.getLogger("Pivot Angle: " + Math.toDegrees(getPivotAngle()));
-    // System.out.println(Math.toDegrees(getPivotAngle()));
-
-    // if (getPivotAngle() - lastAngle > Math.toRadians(1)) {
-    //   System.out.println("Pivot Angle: " + Math.toDegrees(getPivotAngle()));
-    //   lastAngle = getPivotAngle();
-    // }
+  // tell velocity in RPS
+  public void setIntakeRollersCustom(double velocity) {
+    leaderMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(velocity));
   }
 
   public void start() {
-    leaderMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(-30.0));
-    System.out.println("Intake started");
+    leaderMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(-100.0));
   }
 
   public void stop() {
     leaderMotor.setControl(new com.ctre.phoenix6.controls.VoltageOut(0.0));
-    System.out.println("Intake stopped");
   }
 
   public void eject() {
-    leaderMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(30.0));
-    System.out.println("Intake ejecting");
+    leaderMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(100.0));
   }
 
   public void intakeIdle() {
-    System.out.println("Intake idleing");
+    leaderMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(-15.0));
   }
 }

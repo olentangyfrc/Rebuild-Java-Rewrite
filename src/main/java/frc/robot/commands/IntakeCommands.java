@@ -24,6 +24,22 @@ public class IntakeCommands {
         intake);
   }
 
+  public static Command startagitationIntake(Intake intake) {
+    return Commands.run(
+        () -> {
+          intake.setIntakeAgitation(true);
+        },
+        intake);
+  }
+
+  public static Command stopagitationIntake(Intake intake) {
+    return Commands.run(
+        () -> {
+          intake.setIntakeAgitation(false);
+        },
+        intake);
+  }
+
   public static Command stopIntake(Intake intake) {
     return Commands.run(
         () -> {

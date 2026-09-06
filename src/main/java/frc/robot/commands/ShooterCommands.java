@@ -8,10 +8,18 @@ public class ShooterCommands {
 
   Shooter shooter;
 
-  public static Command spinUp(Shooter shooter) {
+  public static Command SetDrumVelocity(Shooter shooter, double velocity) {
     return Commands.run(
         () -> {
-          shooter.spinUp();
+          shooter.setDrumVelocity(velocity);
+        },
+        shooter);
+  }
+
+  public static Command spinUpDrum(Shooter shooter) {
+    return Commands.run(
+        () -> {
+          shooter.spinUpDrum();
         },
         shooter);
   }

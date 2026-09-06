@@ -12,7 +12,6 @@ public class SerializerCommands {
     return Commands.run(
         () -> {
           serializer.start();
-          System.out.println("Serializer command started");
         },
         serializer);
   }
@@ -21,7 +20,6 @@ public class SerializerCommands {
     return Commands.run(
         () -> {
           serializer.stop();
-          System.out.println("Serializer command stopped");
         },
         serializer);
   }
