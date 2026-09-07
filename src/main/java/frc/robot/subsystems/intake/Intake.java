@@ -121,6 +121,11 @@ public class Intake extends SubsystemBase {
     pivotTargetAngle = MathUtil.clamp(pivotSetPoint, Math.toRadians(0.5), Math.toRadians(125));
   }
 
+  public void resetIntake() {
+    setPivotSetPoint(0);
+    intakeIdle();
+  }
+
   public void startagitationIntake() {
     setIntakeAgitation(true);
   }

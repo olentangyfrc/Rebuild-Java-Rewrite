@@ -55,7 +55,7 @@ public class SuperStructure {
 
           } else {
             shooter.waitforfeed();
-            intake.stopagitationIntake();
+            intake.resetIntake();
             serializer.stop();
           }
         },
@@ -70,7 +70,7 @@ public class SuperStructure {
           shooter.stop();
           shooter.resetHood();
           shooter.stopfeed();
-          intake.stopagitationIntake();
+          intake.resetIntake();
           serializer.stop();
         },
         shooter,
@@ -81,4 +81,13 @@ public class SuperStructure {
   public Command shoot() {
     return shoot(drive, shooter, intake, serializer);
   }
+
+  // public static Command intakeSTART(Intake intake, Drive drive) {
+  //   return Commands.run(
+  //       () -> {
+  //         intake.start();
+  //       },
+  //       intake,
+  //       drive);
+  // }
 }
