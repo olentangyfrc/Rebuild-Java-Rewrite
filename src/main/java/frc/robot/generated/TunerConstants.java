@@ -59,7 +59,7 @@ public class TunerConstants {
       new TalonFXConfiguration()
           .withCurrentLimits(
               new CurrentLimitsConfigs()
-                  .withStatorCurrentLimit(Amps.of(60))
+                  .withStatorCurrentLimit(Amps.of(120))
                   .withStatorCurrentLimitEnable(true));
 
   private static final CANcoderConfiguration encoderInitialConfigs = new CANcoderConfiguration();
@@ -69,7 +69,7 @@ public class TunerConstants {
   public static final CANBus kCANBus = new CANBus("*", "./logs/example.hoot");
 
   // Ported from Python speed_at_12_volts
-  public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(4.80);
+  public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(5.5);
 
   // Ported from Python physical specs
   private static final double kCoupleRatio = 0.0;
