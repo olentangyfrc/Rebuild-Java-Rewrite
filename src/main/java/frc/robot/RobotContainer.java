@@ -145,8 +145,8 @@ public class RobotContainer {
         DriveCommands.joystickDrive(
             drive,
             () -> controller.getLeftY(),
-            () -> controller.getLeftX(),
-            () -> -controller.getRightX()));
+            () -> -controller.getLeftX(),
+            () -> controller.getRightX()));
 
     // controller.a().whileTrue(SerializerCommands.startSerializer(serializer));
     // controller.x().whileTrue(SerializerCommands.stopSerializer(serializer));

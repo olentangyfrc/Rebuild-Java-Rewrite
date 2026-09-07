@@ -132,7 +132,7 @@ public class Drive extends SubsystemBase {
     //   drive.clearPoseOffset();  // reset to zero
     //
     // Uncomment the line below and set your values:
-    setPoseOffset(0.0, 6.0, 0.0);
+    setPoseOffset(0.0, 0.0, 0.0);
 
     // Start odometry thread
     PhoenixOdometryThread.getInstance().start();
@@ -230,8 +230,8 @@ public class Drive extends SubsystemBase {
     // Calculate module setpoints
     speeds =
         new ChassisSpeeds(
-            speeds.vxMetersPerSecond * 4.0,
-            speeds.vyMetersPerSecond * 4.0,
+            speeds.vxMetersPerSecond * 1.0,
+            speeds.vyMetersPerSecond * 1.0,
             speeds.omegaRadiansPerSecond * 1.0);
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);

@@ -33,12 +33,18 @@ public class Vision extends SubsystemBase {
   private final List<String> cameraNames;
 
   private final Map<String, Pose2d> mt1Poses = new HashMap<>();
-  private final Map<String, Pose2d> mt2Poses = new HashMap<>();
+  // private final Map<String, Pose2d> mt2Poses = new HashMap<>();
 
   private final Map<String, List<PoseEstimate>> mt1MeasurementTracker = new HashMap<>();
-  private final Map<String, List<PoseEstimate>> mt2MeasurementTracker = new HashMap<>();
+  // private final Map<String, List<PoseEstimate>> mt2MeasurementTracker = new HashMap<>();
 
   private final Field2d visionField = new Field2d();
+  private final Field2d LL1Field = new Field2d();
+
+  // private final Field2d drivetrainField = new Field2d();
+  // private final Field2d LL1Field = new Field2d();
+  // private final Field2d LL2Field = new Field2d();
+  // private final Field2d LL3Field = new Field2d();
   private final SendableChooser<String> disableChooser = new SendableChooser<>();
 
   private boolean sendYawRate = true;
@@ -63,12 +69,13 @@ public class Vision extends SubsystemBase {
 
     for (String name : this.cameraNames) {
       mt1MeasurementTracker.put(name, new ArrayList<>());
-      mt2MeasurementTracker.put(name, new ArrayList<>());
+      // mt2MeasurementTracker.put(name, new ArrayList
       mt1Poses.put(name, new Pose2d());
-      mt2Poses.put(name, new Pose2d());
+      // mt2Poses.put(name, new Pose2d());
     }
 
     visionField.setRobotPose(new Pose2d());
+    LL1Field.setRobotPose(new Pose2d());
     setupLogging();
   }
 
@@ -89,6 +96,10 @@ public class Vision extends SubsystemBase {
 
     SmartDashboard.putData("Disable Chooser", disableChooser);
     SmartDashboard.putData("Vision Field", visionField);
+    // SmartDashboard.putData("Drivetrain Field", drivetrainField);
+    // SmartDashboard.putData("LL1 Field", LL1Field);
+    // SmartDashboard.putData("LL2 Field", LL2Field);
+    // SmartDashboard.putData("LL3 Field", LL3Field);
   }
 
   /** Configures IMU modes and initial orientation for all Limelights, then starts rewind. */
@@ -178,7 +189,7 @@ public class Vision extends SubsystemBase {
               ? LimelightHelpers.getBotPoseEstimate_wpiRed(cameraName)
               : LimelightHelpers.getBotPoseEstimate_wpiBlue(cameraName);
 
-      // Feed valid MT2 vision measurements to drivetrain pose estimator
+      // Feed valid MT1 vision measurements to drivetrain pose estimator
       if (LimelightHelpers.validPoseEstimate(mt1Estimate)) {
         Matrix<N3, N1> stdDevs = calculateStdDevs(mt1Estimate);
         drivetrain.addVisionMeasurement(mt1Estimate.pose, mt1Estimate.timestampSeconds, stdDevs);
@@ -195,7 +206,7 @@ public class Vision extends SubsystemBase {
       }
 
       // Clean up stale measurements
-      cleanTracker(mt2MeasurementTracker.get(cameraName));
+      // cleanTracker(mt2MeasurementTracker.get(cameraName));
       cleanTracker(mt1MeasurementTracker.get(cameraName));
     }
 
@@ -241,13 +252,13 @@ public class Vision extends SubsystemBase {
   }
 
   /** Gets the most recent MegaTag2 pose estimate for the given Limelight. */
-  public Pose2d getRecentMt2Pose(String limelightName) {
-    return mt2Poses.getOrDefault(limelightName, new Pose2d());
-  }
+  // public Pose2d getRecentMt2Pose(String limelightName) {
+  //   return mt2Poses.getOrDefault(limelightName, new Pose2d());
+  // }
 
   /** Gets estimated FPS for a given Limelight camera over the tracking time window. */
   public double getRecentFps(String limelightName) {
-    List<PoseEstimate> tracker = mt2MeasurementTracker.get(limelightName);
+    List<PoseEstimate> tracker = mt1MeasurementTracker.get(limelightName);
     if (tracker == null || timeDelay <= 0) {
       return 0.0;
     }
@@ -259,7 +270,7 @@ public class Vision extends SubsystemBase {
    */
   public boolean hasVision(double staleCountTime) {
     double now = Timer.getFPGATimestamp();
-    for (List<PoseEstimate> tracker : mt2MeasurementTracker.values()) {
+    for (List<PoseEstimate> tracker : mt1MeasurementTracker.values()) {
       if (!tracker.isEmpty()) {
         PoseEstimate last = tracker.get(tracker.size() - 1);
         if (now - last.timestampSeconds < staleCountTime) {
