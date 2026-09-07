@@ -6,11 +6,15 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.drive.Drive;
+import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.serializer.Serializer;
 import frc.robot.subsystems.shooter.Shooter;
 
 public class SuperStructure {
   private final Drive drive;
   private final Shooter shooter;
+  private final Intake intake;
+  private final Serializer serializer;
 
   // Native WPILib entries for live NetworkTables tuning/toggling
   private static final BooleanEntry useDrivetrainPose =
@@ -30,32 +34,51 @@ public class SuperStructure {
     distanceOverride.setDefault(0.0);
   }
 
-  public SuperStructure(Drive drive, Shooter shooter) {
+  public SuperStructure(Drive drive, Shooter shooter, Intake intake, Serializer serializer) {
     this.drive = drive;
     this.shooter = shooter;
+    this.intake = intake;
+    this.serializer = serializer;
   }
 
   /** Command to shoot for the hub using drivetrain pose or manual distance override. */
-  public static Command shoot(Drive drive, Shooter shooter) {
+  public static Command shoot(Drive drive, Shooter shooter, Intake intake, Serializer serializer) {
     return Commands.run(
         () -> {
           boolean usePose = useDrivetrainPose.get();
           double distance = usePose ? drive.getDistanceFromHub() : distanceOverride.get();
           shooter.shootForHub(distance);
+          if (shooter.isDrumAtSpeed() && shooter.isHoodAtSetpoint()) {
+            shooter.startfeed();
+            intake.startagitationIntake();
+            serializer.start();
+
+          } else {
+            shooter.waitforfeed();
+            intake.stopagitationIntake();
+            serializer.stop();
+          }
         },
-        shooter);
+        shooter,
+        intake,
+        serializer);
   }
 
-  public static Command stopAll(Shooter shooter) {
+  public static Command stopAll(Shooter shooter, Intake intake, Serializer serializer) {
     return Commands.run(
         () -> {
           shooter.stop();
           shooter.resetHood();
+          shooter.stopfeed();
+          intake.stopagitationIntake();
+          serializer.stop();
         },
-        shooter);
+        shooter,
+        intake,
+        serializer);
   }
 
   public Command shoot() {
-    return shoot(drive, shooter);
+    return shoot(drive, shooter, intake, serializer);
   }
 }

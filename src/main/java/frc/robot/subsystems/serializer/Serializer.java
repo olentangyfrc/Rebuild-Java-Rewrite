@@ -29,7 +29,7 @@ public class Serializer extends SubsystemBase {
   }
 
   public void start() {
-    serializerMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(15.0));
+    serializerMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(40.0));
   }
   // Stop the serializer by setting the serilzer voltage out to 0 (roll to stop)
   public void stop() {
@@ -37,6 +37,6 @@ public class Serializer extends SubsystemBase {
   }
 
   public void reverse() {
-    serializerMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(-15.0));
+    serializerMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(-40.0));
   }
 }

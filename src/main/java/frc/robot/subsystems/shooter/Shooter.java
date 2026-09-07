@@ -46,7 +46,7 @@ public class Shooter extends SubsystemBase {
   private double spinUpVelocity = 2000; // rpm
   private double maxdrumVelocity = 4000; // RPM
 
-  private final boolean lowCeiling = false;
+  private final boolean lowCeiling = true;
 
   public Shooter() {
     leftTopDrumLeader = new TalonFX(leftTopDrumLeaderCanId, "can0");
@@ -63,7 +63,7 @@ public class Shooter extends SubsystemBase {
 
     hoodPIDController = new PIDController(5.2, 0, 0);
     hoodFFWController = new ArmFeedforward(0.04, 0.29, 0);
-    hoodPIDController.setTolerance(Math.toRadians(0.5)); // min-max hood angle: 2 - 47
+    hoodPIDController.setTolerance(Math.toRadians(1.5)); // min-max hood angle: 2 - 47
     hoodPIDController.setIZone(Math.toRadians(0.5));
     hoodPIDController.setSetpoint(Math.toRadians(3));
     hoodPIDController.reset();
@@ -132,8 +132,12 @@ public class Shooter extends SubsystemBase {
     hoodMotor.getConfigurator().apply(hoodMotorConfig, 0.25);
   }
 
-  public boolean isHoodAtSetPoint() {
+  public boolean isHoodAtSetpoint() {
     return hoodPIDController.atSetpoint();
+  }
+
+  public boolean isHoodAtSetPoint() {
+    return isHoodAtSetpoint();
   }
 
   public void resetHood() {
@@ -145,9 +149,9 @@ public class Shooter extends SubsystemBase {
   }
 
   public boolean isDrumAtSpeed() {
-    return leftTopDrumLeader.getClosedLoopError().getValueAsDouble() < .1;
+    return leftTopDrumLeader.getClosedLoopError().getValueAsDouble() < 2;
   }
-    // Set hood in radians from (2 - 47 Degrees) 
+  // Set hood in radians from (2 - 47 Degrees)
 
   public void setHoodSetPoint(double hoodSetPoint) {
     hoodTargetAngle = MathUtil.clamp(hoodSetPoint, Math.toRadians(2), Math.toRadians(47));
@@ -207,7 +211,7 @@ public class Shooter extends SubsystemBase {
   }
   // Sets Voltage out for Feeder to 0 (roll to stop)
   public void stopFeeder() {
-    indexerTunnel.setControl(new com.ctre.phoenix6.controls.VoltageOut(0));
+    indexerFeeder.setControl(new com.ctre.phoenix6.controls.VoltageOut(0));
   }
 
   // Sets all Voltages for indexer,feeder and drum to 0 (roll to stop)
@@ -219,13 +223,18 @@ public class Shooter extends SubsystemBase {
 
   public void shootForHub(double distanceMeters) {
     ShooterUtil.ShooterParameters params = ShooterUtil.getInterpolatedValues(distanceMeters);
-    setHoodSetPoint(params.hoodAngleRad());
+    setHoodSetPoint(params.hoodAngleRad() + Math.toRadians(20));
     setDrumVelocity(params.flywheelRpm());
   }
 
   public void startfeed() {
-    setTunnelVelocity(1480);
-    setFeederVelocity(900);
+    setTunnelVelocity(3500);
+    setFeederVelocity(4000);
+  }
+
+  public void waitforfeed() {
+    setTunnelVelocity((40 * 60));
+    setFeederVelocity((-5 * 60));
   }
 
   public void stopfeed() {

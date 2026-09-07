@@ -92,9 +92,8 @@ public class Intake extends SubsystemBase {
       if (!isAgitating) {
         agitationTimer.restart();
         isAgitating = true;
-        start();
-        ;
       }
+      start();
 
       double time = agitationTimer.get();
 
@@ -120,6 +119,14 @@ public class Intake extends SubsystemBase {
 
   public void setPivotSetPoint(double pivotSetPoint) {
     pivotTargetAngle = MathUtil.clamp(pivotSetPoint, Math.toRadians(0.5), Math.toRadians(125));
+  }
+
+  public void startagitationIntake() {
+    setIntakeAgitation(true);
+  }
+
+  public void stopagitationIntake() {
+    setIntakeAgitation(false);
   }
 
   static double lastAngle = 0;
