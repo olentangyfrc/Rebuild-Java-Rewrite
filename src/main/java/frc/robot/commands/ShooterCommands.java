@@ -39,4 +39,14 @@ public class ShooterCommands {
         },
         shooter);
   }
+
+  public static Command shootForHub(Shooter shooter, double distanceMeters) {
+    return Commands.run(
+        () -> {
+          shooter.shootForHub(distanceMeters);
+        },
+        shooter);
+  }
 }
+
+

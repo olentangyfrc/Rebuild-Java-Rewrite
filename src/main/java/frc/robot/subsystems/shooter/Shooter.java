@@ -1,6 +1,5 @@
 package frc.robot.subsystems.shooter;
 
-import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.hardware.CANcoder;
@@ -12,6 +11,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.shooter.ShooterUtil;
 
 public class Shooter extends SubsystemBase {
   private TalonFX leftTopDrumLeader;
@@ -26,14 +26,12 @@ public class Shooter extends SubsystemBase {
   private PIDController hoodPIDController;
   private ArmFeedforward hoodFFWController;
   private double hoodTargetAngle;
-  private double hoodSetPoint;
 
   private TalonFXConfiguration leftTopDrumLeaderConfig;
   private TalonFXConfiguration commonDrumFollowerConfig;
   private TalonFXConfiguration indexerFeederConfig;
   private TalonFXConfiguration indexerTunnelConfig;
   private TalonFXConfiguration hoodMotorConfig;
-  private CANcoderConfiguration hoodEncoderConfig;
 
   private final int leftTopDrumLeaderCanId = 22;
   private final int leftBottomDrumFollowerCanId = 23;
@@ -215,4 +213,22 @@ public class Shooter extends SubsystemBase {
     indexerFeeder.setControl(new com.ctre.phoenix6.controls.VoltageOut(0.0));
     indexerTunnel.setControl(new com.ctre.phoenix6.controls.VoltageOut(0.0));
   }
+
+  
+  public void shootForHub(double distanceMeters) {
+    ShooterUtil.ShooterParameters params = ShooterUtil.getInterpolatedValues(distanceMeters);
+    setHoodSetPoint(params.hoodAngleRad());
+    setDrumVelocity(params.flywheelRpm());
+  }
+
+  public void startfeed(){
+    setTunnelVelocity(1480);
+    setFeederVelocity(900);
+  }
+
+  public void stopfeed(){
+    stopTunnel();
+    stopFeeder();
+  }
 }
+

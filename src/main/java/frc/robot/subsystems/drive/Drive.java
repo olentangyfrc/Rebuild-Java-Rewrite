@@ -334,10 +334,36 @@ public class Drive extends SubsystemBase {
     return getPose().getRotation();
   }
 
+  /** Returns the target Hub translation in meters on the field. */
+  public Translation2d getHubPosition() {
+    // Default field Hub position (center of field or alliance hub)
+    return new Translation2d(8.27, 4.10);
+  }
+
+  /**
+   * Calculates the distance in meters from the current estimated robot pose to the hub position.
+   *
+   * @return Distance to the Hub target in meters.
+   */
+  public double getDistanceFromHub() {
+    return getPose().getTranslation().getDistance(getHubPosition());
+  }
+
+  /**
+   * Calculates the distance in meters from the current estimated robot pose to a specified hub position.
+   *
+   * @param hubPosition Target Translation2d position on the field.
+   * @return Distance to the hub in meters.
+   */
+  public double getDistanceFromHub(Translation2d hubPosition) {
+    return getPose().getTranslation().getDistance(hubPosition);
+  }
+
   /** Resets the current odometry pose. */
   public void setPose(Pose2d pose) {
     poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);
   }
+
 
   /**
    * Sets the pose estimator offset. This transform is applied on top of the raw estimated pose
