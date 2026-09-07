@@ -11,7 +11,6 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.subsystems.shooter.ShooterUtil;
 
 public class Shooter extends SubsystemBase {
   private TalonFX leftTopDrumLeader;
@@ -137,14 +136,18 @@ public class Shooter extends SubsystemBase {
     return hoodPIDController.atSetpoint();
   }
 
+  public void resetHood() {
+    setHoodSetPoint(Math.toRadians(2));
+  }
+
   public double getHoodAngle() {
     return Math.toRadians((hoodEncoder.getAbsolutePosition().getValueAsDouble() * 360) + 31);
   }
 
-  // Set hood in degress 2 - 47 Degrees
   public boolean isDrumAtSpeed() {
     return leftTopDrumLeader.getClosedLoopError().getValueAsDouble() < .1;
   }
+    // Set hood in radians from (2 - 47 Degrees) 
 
   public void setHoodSetPoint(double hoodSetPoint) {
     hoodTargetAngle = MathUtil.clamp(hoodSetPoint, Math.toRadians(2), Math.toRadians(47));
@@ -214,21 +217,19 @@ public class Shooter extends SubsystemBase {
     indexerTunnel.setControl(new com.ctre.phoenix6.controls.VoltageOut(0.0));
   }
 
-  
   public void shootForHub(double distanceMeters) {
     ShooterUtil.ShooterParameters params = ShooterUtil.getInterpolatedValues(distanceMeters);
     setHoodSetPoint(params.hoodAngleRad());
     setDrumVelocity(params.flywheelRpm());
   }
 
-  public void startfeed(){
+  public void startfeed() {
     setTunnelVelocity(1480);
     setFeederVelocity(900);
   }
 
-  public void stopfeed(){
+  public void stopfeed() {
     stopTunnel();
     stopFeeder();
   }
 }
-

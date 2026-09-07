@@ -34,8 +34,6 @@ public class Intake extends SubsystemBase {
   private ArmFeedforward pivotFFWController;
   private double pivotTargetAngle;
 
-  private double angle;
-
   private final Timer agitationTimer = new Timer();
   private boolean isAgitating = false;
 
