@@ -40,7 +40,7 @@ public class TunerConstants {
           .withKI(0)
           .withKD(0)
           .withKS(0)
-          .withKV(0.124); // Ported from Python _drive_gains
+          .withKV(0.6975); // Ported from Python _drive_gains
 
   private static final ClosedLoopOutputType kSteerClosedLoopOutput = ClosedLoopOutputType.Voltage;
   private static final ClosedLoopOutputType kDriveClosedLoopOutput = ClosedLoopOutputType.Voltage;
@@ -68,8 +68,8 @@ public class TunerConstants {
   // Ported from Python canbus
   public static final CANBus kCANBus = new CANBus("*", "./logs/example.hoot");
 
-  // Ported from Python speed_at_12_volts
-  public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(5.5);
+  // Calculated from physical motor free speed (6000 RPM / 100 RPS), 5.625 gear ratio, and 1.75 in wheel radius
+  public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(4.965);
 
   // Ported from Python physical specs
   private static final double kCoupleRatio = 0.0;
