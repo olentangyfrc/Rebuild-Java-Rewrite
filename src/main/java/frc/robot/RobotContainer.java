@@ -167,7 +167,7 @@ public class RobotContainer {
     controller.rightBumper().whileTrue(SuperStructure.shoot(drive, shooter, intake, serializer));
     // controller.rightBumper().onFalse(SuperStructure.stopAll(shooter, intake, serializer));
 
-    // controller.b().onTrue(SuperStructure.intakeSTART(intake, drive));
+    controller.a().whileTrue(SuperStructure.intakeSTART(intake));
 
     // controller.x().whileTrue(IntakeCommands.stopagitationIntake(intake));
     // controller.rightBumper().onTrue(ShooterCommands.setHoodAngle(shooter, Math.toRadians(47)));
