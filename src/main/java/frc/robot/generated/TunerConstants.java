@@ -68,7 +68,8 @@ public class TunerConstants {
   // Ported from Python canbus
   public static final CANBus kCANBus = new CANBus("*", "./logs/example.hoot");
 
-  // Calculated from physical motor free speed (6000 RPM / 100 RPS), 5.625 gear ratio, and 1.75 in wheel radius
+  // Calculated from physical motor free speed (6000 RPM / 100 RPS), 5.625 gear ratio, and 1.75 in
+  // wheel radius
   public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(4.965);
 
   // Ported from Python physical specs
