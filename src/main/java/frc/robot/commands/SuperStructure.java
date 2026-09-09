@@ -82,9 +82,7 @@ public class SuperStructure {
     return shoot(drive, shooter, intake, serializer);
   }
 
-  public static Command intakeSTART(Intake intake) {
-    return Commands.runEnd(
-        () -> intake.startagitationIntake(), 
-        intake);
-  }
+  // public static Command intakeSTART(Intake intake) {
+  //   return Commands.runEnd(() -> intake.startagitationIntake(), intake);
+  // }
 }
