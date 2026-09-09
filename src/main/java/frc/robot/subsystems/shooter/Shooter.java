@@ -73,7 +73,7 @@ public class Shooter extends SubsystemBase {
   private double spinUpVelocity = 2000; // rpm
   private double maxdrumVelocity = 4000; // RPM
 
-  private final boolean lowCeiling = true;
+  private final boolean lowCeiling = false;
 
   public Shooter() {
     leftTopDrumLeader = new TalonFX(leftTopDrumLeaderCanId, "can0");
@@ -176,7 +176,7 @@ public class Shooter extends SubsystemBase {
   }
 
   public boolean isDrumAtSpeed() {
-    return leftTopDrumLeader.getClosedLoopError().getValueAsDouble() < 2;
+    return leftTopDrumLeader.getClosedLoopError().getValueAsDouble() < .7;
   }
   // Set hood in radians from (2 - 47 Degrees)
 

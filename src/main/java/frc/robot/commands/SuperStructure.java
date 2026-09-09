@@ -50,7 +50,8 @@ public class SuperStructure {
           shooter.shootForHub(distance);
           if (shooter.isDrumAtSpeed() && shooter.isHoodAtSetpoint()) {
             shooter.startfeed();
-            intake.startagitationIntake();
+            // intake.startagitationIntake();
+            intake.setPivotSetPoint(0);
             serializer.start();
 
           } else {
@@ -82,7 +83,12 @@ public class SuperStructure {
     return shoot(drive, shooter, intake, serializer);
   }
 
-  // public static Command intakeSTART(Intake intake) {
-  //   return Commands.runEnd(() -> intake.startagitationIntake(), intake);
-  // }
+  public static Command intakeSTART(Intake intake) {
+    return Commands.run(
+        () -> {
+          intake.start();
+          intake.setPivotSetPoint(0);
+        },
+        intake);
+  }
 }
