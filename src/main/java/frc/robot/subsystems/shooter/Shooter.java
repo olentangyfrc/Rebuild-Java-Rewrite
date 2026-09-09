@@ -10,9 +10,36 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.networktables.BooleanEntry;
+import edu.wpi.first.networktables.DoubleEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Shooter extends SubsystemBase {
+  private static final BooleanEntry shooterOverrideEnabled =
+      NetworkTableInstance.getDefault()
+          .getTable("SmartDashboard")
+          .getBooleanTopic("Shooter/OverrideEnabled")
+          .getEntry(false);
+
+  private static final DoubleEntry manualHoodAngleDegrees =
+      NetworkTableInstance.getDefault()
+          .getTable("SmartDashboard")
+          .getDoubleTopic("Shooter/ManualHoodAngleDegrees")
+          .getEntry(20.0);
+
+  private static final DoubleEntry manualDrumRPM =
+      NetworkTableInstance.getDefault()
+          .getTable("SmartDashboard")
+          .getDoubleTopic("Shooter/ManualDrumRPM")
+          .getEntry(2000.0);
+
+  static {
+    shooterOverrideEnabled.setDefault(false);
+    manualHoodAngleDegrees.setDefault(20.0);
+    manualDrumRPM.setDefault(2000.0);
+  }
+
   private TalonFX leftTopDrumLeader;
   private TalonFX leftBottomDrumFollower;
   private TalonFX rightTopDrumFollower;
@@ -46,7 +73,7 @@ public class Shooter extends SubsystemBase {
   private double spinUpVelocity = 2000; // rpm
   private double maxdrumVelocity = 4000; // RPM
 
-  private final boolean lowCeiling = true;
+  private final boolean lowCeiling = false;
 
   public Shooter() {
     leftTopDrumLeader = new TalonFX(leftTopDrumLeaderCanId, "can0");
@@ -149,7 +176,7 @@ public class Shooter extends SubsystemBase {
   }
 
   public boolean isDrumAtSpeed() {
-    return leftTopDrumLeader.getClosedLoopError().getValueAsDouble() < 2;
+    return leftTopDrumLeader.getClosedLoopError().getValueAsDouble() < .7;
   }
   // Set hood in radians from (2 - 47 Degrees)
 
@@ -222,9 +249,14 @@ public class Shooter extends SubsystemBase {
   }
 
   public void shootForHub(double distanceMeters) {
-    ShooterUtil.ShooterParameters params = ShooterUtil.getInterpolatedValues(distanceMeters);
-    setHoodSetPoint(params.hoodAngleRad() + Math.toRadians(20));
-    setDrumVelocity(params.flywheelRpm());
+    if (shooterOverrideEnabled.get()) {
+      setHoodSetPoint(Math.toRadians(manualHoodAngleDegrees.get()));
+      setDrumVelocity(manualDrumRPM.get());
+    } else {
+      ShooterUtil.ShooterParameters params = ShooterUtil.getInterpolatedValues(distanceMeters);
+      setHoodSetPoint(params.hoodAngleRad());
+      setDrumVelocity(params.flywheelRpm());
+    }
   }
 
   public void startfeed() {

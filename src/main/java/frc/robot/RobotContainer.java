@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.SerializerCommands;
 import frc.robot.commands.SuperStructure;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.Drive;
@@ -144,8 +145,8 @@ public class RobotContainer {
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
-            () -> -controller.getLeftY(),
-            () -> -controller.getLeftX(),
+            () -> controller.getLeftY(),
+            () -> controller.getLeftX(),
             () -> -controller.getRightX()));
 
     // controller.a().whileTrue(SerializerCommands.startSerializer(serializer));
@@ -167,7 +168,8 @@ public class RobotContainer {
     controller.rightBumper().whileTrue(SuperStructure.shoot(drive, shooter, intake, serializer));
     // controller.rightBumper().onFalse(SuperStructure.stopAll(shooter, intake, serializer));
 
-    // controller.b().onTrue(SuperStructure.intakeSTART(intake, drive));
+    controller.y().whileTrue(SuperStructure.intakeSTART(intake));
+    controller.b().whileTrue(SerializerCommands.startSerializer(serializer));
 
     // controller.x().whileTrue(IntakeCommands.stopagitationIntake(intake));
     // controller.rightBumper().onTrue(ShooterCommands.setHoodAngle(shooter, Math.toRadians(47)));
@@ -184,8 +186,12 @@ public class RobotContainer {
     //             () -> controller.getLeftX(),
     //             () -> Rotation2d.fromDegrees(180)));
 
-    // // Switch to X pattern when X button is pressed
-    // controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
+    // Point toward the Hub while X button is held
+    controller
+        .x()
+        .whileTrue(
+            DriveCommands.pointToHub(
+                drive, () -> controller.getLeftY(), () -> controller.getLeftX()));
 
     // Reset gyro to 0° when B button is pressed
     controller

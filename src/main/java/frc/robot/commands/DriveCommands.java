@@ -25,10 +25,10 @@ import java.util.function.Supplier;
 
 public class DriveCommands {
   private static final double DEADBAND = 0.1;
-  private static final double ANGLE_KP = 5.0;
+  private static final double ANGLE_KP = 9.0;
   private static final double ANGLE_KD = 0.4;
-  private static final double ANGLE_MAX_VELOCITY = 8.0;
-  private static final double ANGLE_MAX_ACCELERATION = 20.0;
+  private static final double ANGLE_MAX_VELOCITY = 40.0;
+  private static final double ANGLE_MAX_ACCELERATION = 60.0;
 
   private DriveCommands() {}
 
@@ -137,5 +137,14 @@ public class DriveCommands {
 
         // Reset PID controller when command starts
         .beforeStarting(() -> angleController.reset(drive.getRotation().getRadians()));
+  }
+
+  /**
+   * Field relative drive command using joysticks for linear control and PID targeting to
+   * continuously point/align the drivetrain heading toward the Hub.
+   */
+  public static Command pointToHub(
+      Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
+    return joystickDriveAtAngle(drive, xSupplier, ySupplier, drive::getRotationToHub);
   }
 }
