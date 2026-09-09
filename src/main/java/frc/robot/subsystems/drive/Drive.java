@@ -161,7 +161,9 @@ public class Drive extends SubsystemBase {
 
   @Override
   public void periodic() {
-    System.out.println(getDistanceFromHub());
+    Logger.recordOutput("Drive/DistanceFromHub", getDistanceFromHub());
+    Logger.recordOutput("Drive/RotationToHub", getRotationToHub());
+    SmartDashboard.putNumber("Drive/DistanceFromHub", getDistanceFromHub());
     odometryLock.lock(); // Prevents odometry updates while reading data
     gyroIO.updateInputs(gyroInputs);
     Logger.processInputs("Drive/Gyro", gyroInputs);
@@ -345,6 +347,7 @@ public class Drive extends SubsystemBase {
    *
    * @return Distance to the Hub target in meters.
    */
+  @AutoLogOutput(key = "Drive/DistanceFromHub")
   public double getDistanceFromHub() {
     return getPose().getTranslation().getDistance(getHubPosition());
   }
@@ -358,6 +361,31 @@ public class Drive extends SubsystemBase {
    */
   public double getDistanceFromHub(Translation2d hubPosition) {
     return getPose().getTranslation().getDistance(hubPosition);
+  }
+
+  /**
+   * Calculates the target heading angle (Rotation2d) from the current estimated robot pose pointing
+   * directly at the target Hub position, incorporating a 180° offset for front/back chassis
+   * inversion.
+   *
+   * @return Rotation2d facing the Hub.
+   */
+  @AutoLogOutput(key = "Drive/RotationToHub")
+  public Rotation2d getRotationToHub() {
+    return getRotationToHub(getHubPosition());
+  }
+
+  /**
+   * Calculates the target heading angle (Rotation2d) from the current estimated robot pose pointing
+   * directly at a specified hub position, incorporating a 180° offset for front/back chassis
+   * inversion.
+   *
+   * @param hubPosition Target Translation2d position on the field.
+   * @return Rotation2d facing the hub position.
+   */
+  public Rotation2d getRotationToHub(Translation2d hubPosition) {
+    Translation2d currentTranslation = getPose().getTranslation();
+    return hubPosition.minus(currentTranslation).getAngle().plus(new Rotation2d(Math.PI));
   }
 
   /** Resets the current odometry pose. */

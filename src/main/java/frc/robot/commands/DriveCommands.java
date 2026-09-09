@@ -138,4 +138,13 @@ public class DriveCommands {
         // Reset PID controller when command starts
         .beforeStarting(() -> angleController.reset(drive.getRotation().getRadians()));
   }
+
+  /**
+   * Field relative drive command using joysticks for linear control and PID targeting to
+   * continuously point/align the drivetrain heading toward the Hub.
+   */
+  public static Command pointToHub(
+      Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
+    return joystickDriveAtAngle(drive, xSupplier, ySupplier, drive::getRotationToHub);
+  }
 }

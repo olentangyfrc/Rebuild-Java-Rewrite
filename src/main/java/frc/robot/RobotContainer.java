@@ -184,8 +184,12 @@ public class RobotContainer {
                 () -> controller.getLeftX(),
                 () -> Rotation2d.fromDegrees(180)));
 
-    // // Switch to X pattern when X button is pressed
-    // controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
+    // Point toward the Hub while X button is held
+    controller
+        .x()
+        .whileTrue(
+            DriveCommands.pointToHub(
+                drive, () -> -controller.getLeftY(), () -> -controller.getLeftX()));
 
     // Reset gyro to 0° when B button is pressed
     controller
