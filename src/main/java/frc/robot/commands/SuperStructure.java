@@ -49,10 +49,12 @@ public class SuperStructure {
           double distance = usePose ? drive.getDistanceFromHub() : distanceOverride.get();
           shooter.shootForHub(distance);
           if (shooter.isDrumAtSpeed() && shooter.isHoodAtSetpoint()) {
+
             shooter.startfeed();
-            // intake.startagitationIntake();
-            intake.setPivotSetPoint(0);
             serializer.start();
+
+            intake.startagitationIntake();
+            // intake.setPivotSetPoint(0);
 
           } else {
             shooter.waitforfeed();

@@ -8,7 +8,7 @@ public class ShooterUtil {
   // Chase messed up our limelight configs and we need this to offset
   private static final double CHASE_FUDGE_FACTOR = 0.6578092;
   // This needs to be tuned (TO BE DONE)
-  private static final double NEW_INDEXER_FUDGE_FACTOR = -40.0;
+  private static final double NEW_INDEXER_FUDGE_FACTOR = -40;
 
   private static final InterpolatingDoubleTreeMap angleMap = new InterpolatingDoubleTreeMap();
   private static final InterpolatingDoubleTreeMap rpmMap = new InterpolatingDoubleTreeMap();

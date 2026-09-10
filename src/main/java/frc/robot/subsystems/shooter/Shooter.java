@@ -68,7 +68,7 @@ public class Shooter extends SubsystemBase {
   private final int hoodMotorCanId = 26;
   private final int hoodEncoderCanId = 47;
 
-  private double drumTargetVelocityTolerance = 1.0; // rps
+  // private double drumTargetVelocityTolerance = 1.0; // rps
 
   private double spinUpVelocity = 2000; // rpm
   private double maxdrumVelocity = 4000; // RPM
@@ -176,7 +176,7 @@ public class Shooter extends SubsystemBase {
   }
 
   public boolean isDrumAtSpeed() {
-    return leftTopDrumLeader.getClosedLoopError().getValueAsDouble() < .7;
+    return leftTopDrumLeader.getClosedLoopError().getValueAsDouble() < 2;
   }
   // Set hood in radians from (2 - 47 Degrees)
 
@@ -189,11 +189,6 @@ public class Shooter extends SubsystemBase {
         new com.ctre.phoenix6.controls.VoltageOut(
             hoodPIDController.calculate(getHoodAngle(), hoodTargetAngle)
                 + hoodFFWController.calculate(getHoodAngle(), 0)));
-  }
-
-  // Returns a true of false when the drum is at speed
-  public boolean isdrumAtSpeed() {
-    return leftTopDrumLeader.getClosedLoopError().getValueAsDouble() < drumTargetVelocityTolerance;
   }
 
   public void spinUpDrum() {
@@ -260,13 +255,13 @@ public class Shooter extends SubsystemBase {
   }
 
   public void startfeed() {
-    setTunnelVelocity(3500);
-    setFeederVelocity(4000);
+    setTunnelVelocity(5000);
+    setFeederVelocity(5000);
   }
 
   public void waitforfeed() {
     setTunnelVelocity((40 * 60));
-    setFeederVelocity((-5 * 60));
+    setFeederVelocity((-1800));
   }
 
   public void stopfeed() {

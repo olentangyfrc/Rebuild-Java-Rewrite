@@ -16,7 +16,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.commands.DriveCommands;
-import frc.robot.commands.SerializerCommands;
 import frc.robot.commands.SuperStructure;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.Drive;
@@ -169,7 +168,7 @@ public class RobotContainer {
     // controller.rightBumper().onFalse(SuperStructure.stopAll(shooter, intake, serializer));
 
     controller.y().whileTrue(SuperStructure.intakeSTART(intake));
-    controller.b().whileTrue(SerializerCommands.startSerializer(serializer));
+    // controller.b().whileTrue(SerializerCommands.startSerializer(serializer));
 
     // controller.x().whileTrue(IntakeCommands.stopagitationIntake(intake));
     // controller.rightBumper().onTrue(ShooterCommands.setHoodAngle(shooter, Math.toRadians(47)));
