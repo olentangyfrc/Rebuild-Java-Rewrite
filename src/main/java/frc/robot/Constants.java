@@ -28,4 +28,6 @@ public final class Constants {
     /** Replaying from a log file. */
     REPLAY
   }
+
+  public static record ProfileConstants(double maxVelocity, double maxAcceleration) {}
 }

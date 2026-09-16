@@ -163,6 +163,7 @@ public class Drive extends SubsystemBase {
   public void periodic() {
     Logger.recordOutput("Drive/DistanceFromHub", getDistanceFromHub());
     Logger.recordOutput("Drive/RotationToHub", getRotationToHub());
+    SmartDashboard.putNumber("Drive/DistanceFromPass", getDistanceFromPass());
     SmartDashboard.putNumber("Drive/DistanceFromHub", getDistanceFromHub());
     odometryLock.lock(); // Prevents odometry updates while reading data
     gyroIO.updateInputs(gyroInputs);
@@ -342,6 +343,10 @@ public class Drive extends SubsystemBase {
     return new Translation2d(4.6, 4);
   }
 
+  public Translation2d getPassPosition() {
+    return new Translation2d(2.0, 4);
+  }
+
   /**
    * Calculates the distance in meters from the current estimated robot pose to the hub position.
    *
@@ -350,6 +355,10 @@ public class Drive extends SubsystemBase {
   @AutoLogOutput(key = "Drive/DistanceFromHub")
   public double getDistanceFromHub() {
     return getPose().getTranslation().getDistance(getHubPosition());
+  }
+
+  public double getDistanceFromPass() {
+    return (getPose().getTranslation().getDistance(getPassPosition()) + 5.4);
   }
 
   /**
@@ -386,6 +395,45 @@ public class Drive extends SubsystemBase {
   public Rotation2d getRotationToHub(Translation2d hubPosition) {
     Translation2d currentTranslation = getPose().getTranslation();
     return hubPosition.minus(currentTranslation).getAngle().plus(new Rotation2d(Math.PI));
+  }
+
+  /**
+   * Calculates the virtual hub position on the field to compensate for current robot velocity when
+   * shooting on the move.
+   *
+   * @return Translation2d of the virtual target position.
+   */
+  @AutoLogOutput(key = "Drive/VirtualHubPosition")
+  public Translation2d getVirtualHubPosition() {
+    Translation2d robotTranslation = getPose().getTranslation();
+    ChassisSpeeds robotSpeedsField =
+        ChassisSpeeds.fromRobotRelativeSpeeds(getChassisSpeeds(), getRotation());
+    Translation2d hubPos = getHubPosition();
+
+    double defaultNoteSpeed = 15.0; // Average note velocity estimate in m/s
+    Translation2d virtualTarget = hubPos;
+
+    for (int i = 0; i < 3; i++) {
+      double distance = robotTranslation.getDistance(virtualTarget);
+      double timeOfFlight = distance / defaultNoteSpeed;
+      virtualTarget =
+          new Translation2d(
+              hubPos.getX() - robotSpeedsField.vxMetersPerSecond * timeOfFlight,
+              hubPos.getY() - robotSpeedsField.vyMetersPerSecond * timeOfFlight);
+    }
+    return virtualTarget;
+  }
+
+  /** Calculates the distance in meters to the virtual hub for Shoot on the Move. */
+  @AutoLogOutput(key = "Drive/ShootOnTheMoveDistance")
+  public double getShootOnTheMoveDistance() {
+    return getPose().getTranslation().getDistance(getVirtualHubPosition());
+  }
+
+  /** Calculates the target heading angle facing the virtual hub for Shoot on the Move. */
+  @AutoLogOutput(key = "Drive/ShootOnTheMoveRotation")
+  public Rotation2d getShootOnTheMoveRotation() {
+    return getRotationToHub(getVirtualHubPosition());
   }
 
   /** Resets the current odometry pose. */

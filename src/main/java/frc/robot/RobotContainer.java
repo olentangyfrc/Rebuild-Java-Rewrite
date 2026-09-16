@@ -192,7 +192,23 @@ public class RobotContainer {
             DriveCommands.pointToHub(
                 drive, () -> controller.getLeftY(), () -> controller.getLeftX()));
 
-    // Reset gyro to 0° when B button is pressed
+    // Snake Drive: Align heading with direction of motion when holding A button
+    controller
+        .a()
+        .whileTrue(
+            DriveCommands.snakeDrive(
+                drive, () -> controller.getLeftY(), () -> controller.getLeftX()));
+
+    // Shoot on the Move: Aim at velocity-compensated virtual Hub while driving on Right Trigger
+    controller
+        .rightTrigger()
+        .whileTrue(
+            Commands.parallel(
+                DriveCommands.shootOnTheMove(
+                    drive, () -> controller.getLeftY(), () -> controller.getLeftX()),
+                SuperStructure.shootOnTheMove(drive, shooter, intake, serializer)));
+
+    // Reset gyro to 0° when B button is pressed
     controller
         .b()
         .onTrue(

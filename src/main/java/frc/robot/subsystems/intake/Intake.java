@@ -8,11 +8,15 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
-import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants.ProfileConstants;
 
 public class Intake extends SubsystemBase {
+  public static final ProfileConstants pivot_profile_constants = new ProfileConstants(500, 250);
+
   private TalonFXConfiguration leaderConfiguration;
   private TalonFXConfiguration followerConfiguration;
   private TalonFXConfiguration pivotConfiguration;
@@ -30,7 +34,7 @@ public class Intake extends SubsystemBase {
   private TalonFX pivotMotor;
   private CANcoder pivotEncoder;
 
-  private PIDController pivotPIDController;
+  private ProfiledPIDController pivotPIDController;
   private ArmFeedforward pivotFFWController;
   private double pivotTargetAngle;
 
@@ -69,12 +73,18 @@ public class Intake extends SubsystemBase {
     pivotMotor = new TalonFX(pivotMotorCanId, "can0");
     pivotEncoder = new CANcoder(pivotEncoderCanId, "can0");
 
-    pivotPIDController = new PIDController(4, 0, 0.1);
+    pivotPIDController =
+        new ProfiledPIDController(
+            4,
+            0,
+            0.1,
+            new TrapezoidProfile.Constraints(
+                pivot_profile_constants.maxVelocity(), pivot_profile_constants.maxAcceleration()));
     pivotFFWController = new ArmFeedforward(0.1, 0.42, 0);
     pivotPIDController.setTolerance(Math.toRadians(5));
     // pivotPIDController.setIZone(Math.toRadians(0));
     // pivotPIDController.setSetpoint(Math.toRadians(0));
-    pivotPIDController.reset();
+    pivotPIDController.reset(getPivotAngle());
   }
 
   public double getPivotAngle() {

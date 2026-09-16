@@ -147,4 +147,42 @@ public class DriveCommands {
       Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
     return joystickDriveAtAngle(drive, xSupplier, ySupplier, drive::getRotationToHub);
   }
+
+  /**
+   * Snake drive command: Field-relative drive using joysticks for linear movement, where the front
+   * of the robot continuously points toward the direction of momentum (linear velocity).
+   */
+  public static Command snakeDrive(
+      Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
+    var lastTargetHeading = new Rotation2d[] {drive.getRotation()};
+
+    return joystickDriveAtAngle(
+        drive,
+        xSupplier,
+        ySupplier,
+        () -> {
+          Translation2d linearVelocity =
+              getLinearVelocityFromJoysticks(xSupplier.getAsDouble(), ySupplier.getAsDouble());
+          if (linearVelocity.getNorm() > DEADBAND) {
+            boolean isFlipped =
+                DriverStation.getAlliance().isPresent()
+                    && DriverStation.getAlliance().get() == Alliance.Red;
+            Rotation2d movementAngle = new Rotation2d(linearVelocity.getX(), linearVelocity.getY());
+            if (isFlipped) {
+              movementAngle = movementAngle.plus(new Rotation2d(Math.PI));
+            }
+            lastTargetHeading[0] = movementAngle;
+          }
+          return lastTargetHeading[0];
+        });
+  }
+
+  /**
+   * Field-relative drive command using joysticks for linear control and PID targeting to
+   * continuously point/align the drivetrain heading toward the velocity-compensated virtual Hub.
+   */
+  public static Command shootOnTheMove(
+      Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
+    return joystickDriveAtAngle(drive, xSupplier, ySupplier, drive::getShootOnTheMoveRotation);
+  }
 }
