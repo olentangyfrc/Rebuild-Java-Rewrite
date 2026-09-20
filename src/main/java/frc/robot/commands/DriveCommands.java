@@ -8,6 +8,7 @@
 package frc.robot.commands;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -179,10 +180,119 @@ public class DriveCommands {
 
   /**
    * Field-relative drive command using joysticks for linear control and PID targeting to
-   * continuously point/align the drivetrain heading toward the velocity-compensated virtual Hub.
+   * continuously point/align the drivetrain heading toward the velocity-compensated virtual Hub. If
+   * no translation joystick input is provided, locks the drivetrain in an X pattern to prevent
+   * pushing.
    */
   public static Command shootOnTheMove(
       Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
-    return joystickDriveAtAngle(drive, xSupplier, ySupplier, drive::getShootOnTheMoveRotation);
+    ProfiledPIDController angleController =
+        new ProfiledPIDController(
+            ANGLE_KP,
+            0.0,
+            ANGLE_KD,
+            new TrapezoidProfile.Constraints(ANGLE_MAX_VELOCITY, ANGLE_MAX_ACCELERATION));
+    angleController.enableContinuousInput(-Math.PI, Math.PI);
+
+    return Commands.run(
+            () -> {
+              double x = xSupplier.getAsDouble();
+              double y = ySupplier.getAsDouble();
+              Translation2d linearVelocity = getLinearVelocityFromJoysticks(x, y);
+
+              if (linearVelocity.getNorm() <= 0.0) {
+                drive.stopWithX();
+              } else {
+                double omega =
+                    angleController.calculate(
+                        drive.getRotation().getRadians(),
+                        drive.getShootOnTheMoveRotation().getRadians());
+
+                ChassisSpeeds speeds =
+                    new ChassisSpeeds(
+                        linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec(),
+                        linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec(),
+                        omega);
+                boolean isFlipped =
+                    DriverStation.getAlliance().isPresent()
+                        && DriverStation.getAlliance().get() == Alliance.Red;
+                drive.runVelocity(
+                    ChassisSpeeds.fromFieldRelativeSpeeds(
+                        speeds,
+                        isFlipped
+                            ? drive.getRotation().plus(new Rotation2d(Math.PI))
+                            : drive.getRotation()));
+              }
+            },
+            drive)
+        .beforeStarting(() -> angleController.reset(drive.getRotation().getRadians()));
+  }
+
+  /**
+   * Field-relative drive command using PID controllers for X position, Y position, and Rotation to
+   * drive the robot to a target Pose2d.
+   */
+  public static Command driveToPose(Drive drive, Supplier<Pose2d> poseSupplier) {
+    PIDController xController = new PIDController(5.0, 0.0, 0.0);
+    PIDController yController = new PIDController(5.0, 0.0, 0.0);
+    ProfiledPIDController angleController =
+        new ProfiledPIDController(
+            ANGLE_KP,
+            0.0,
+            ANGLE_KD,
+            new TrapezoidProfile.Constraints(ANGLE_MAX_VELOCITY, ANGLE_MAX_ACCELERATION));
+    angleController.enableContinuousInput(-Math.PI, Math.PI);
+
+    return Commands.run(
+            () -> {
+              Pose2d currentPose = drive.getPose();
+              Pose2d targetPose = poseSupplier.get();
+
+              double vx = xController.calculate(currentPose.getX(), targetPose.getX());
+              double vy = yController.calculate(currentPose.getY(), targetPose.getY());
+              double omega =
+                  angleController.calculate(
+                      currentPose.getRotation().getRadians(),
+                      targetPose.getRotation().getRadians());
+
+              Translation2d linearVelocity = new Translation2d(vx, vy);
+              double maxSpeed = drive.getMaxLinearSpeedMetersPerSec();
+              if (linearVelocity.getNorm() > maxSpeed) {
+                linearVelocity = linearVelocity.times(maxSpeed / linearVelocity.getNorm());
+              }
+
+              ChassisSpeeds speeds =
+                  new ChassisSpeeds(linearVelocity.getX(), linearVelocity.getY(), omega);
+
+              boolean isFlipped =
+                  DriverStation.getAlliance().isPresent()
+                      && DriverStation.getAlliance().get() == Alliance.Red;
+              drive.runVelocity(
+                  ChassisSpeeds.fromFieldRelativeSpeeds(
+                      speeds,
+                      isFlipped
+                          ? drive.getRotation().plus(new Rotation2d(Math.PI))
+                          : drive.getRotation()));
+            },
+            drive)
+        .beforeStarting(
+            () -> {
+              xController.reset();
+              yController.reset();
+              angleController.reset(drive.getRotation().getRadians());
+            });
+  }
+
+  /**
+   * Field-relative drive command using PID controllers to drive the robot to a static target
+   * Pose2d.
+   */
+  public static Command driveToPose(Drive drive, Pose2d targetPose) {
+    return driveToPose(drive, () -> targetPose);
+  }
+
+  /** Stops the drive and locks swerve modules in an X arrangement to resist movement. */
+  public static Command lock(Drive drive) {
+    return Commands.run(drive::stopWithX, drive);
   }
 }

@@ -344,7 +344,7 @@ public class Drive extends SubsystemBase {
   }
 
   public Translation2d getPassPosition() {
-    return new Translation2d(2.0, 4);
+    return new Translation2d(2.94, getPose().getY());
   }
 
   /**
@@ -358,7 +358,7 @@ public class Drive extends SubsystemBase {
   }
 
   public double getDistanceFromPass() {
-    return (getPose().getTranslation().getDistance(getPassPosition()) + 5.4);
+    return (getPose().getTranslation().getDistance(getPassPosition()) + 2);
   }
 
   /**

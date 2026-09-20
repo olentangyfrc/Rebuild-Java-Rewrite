@@ -34,10 +34,24 @@ public class Shooter extends SubsystemBase {
           .getDoubleTopic("Shooter/ManualDrumRPM")
           .getEntry(2000.0);
 
+  private static final BooleanEntry passingEnabled =
+      NetworkTableInstance.getDefault()
+          .getTable("SmartDashboard")
+          .getBooleanTopic("Shooter/Passing")
+          .getEntry(false);
+
+  private static final DoubleEntry passingScaleMultiplier =
+      NetworkTableInstance.getDefault()
+          .getTable("SmartDashboard")
+          .getDoubleTopic("Shooter/PassingScaleMultiplier")
+          .getEntry(1.0);
+
   static {
     shooterOverrideEnabled.setDefault(false);
     manualHoodAngleDegrees.setDefault(20.0);
     manualDrumRPM.setDefault(2000.0);
+    passingEnabled.setDefault(false);
+    passingScaleMultiplier.setDefault(1.0);
   }
 
   private TalonFX leftTopDrumLeader;
@@ -52,6 +66,7 @@ public class Shooter extends SubsystemBase {
   private PIDController hoodPIDController;
   private ArmFeedforward hoodFFWController;
   private double hoodTargetAngle;
+  private double targetDrumRpm = 0.0;
 
   private TalonFXConfiguration leftTopDrumLeaderConfig;
   private TalonFXConfiguration commonDrumFollowerConfig;
@@ -70,7 +85,7 @@ public class Shooter extends SubsystemBase {
 
   // private double drumTargetVelocityTolerance = 1.0; // rps
 
-  private double spinUpVelocity = 2000; // rpm
+  private double spinUpVelocity = 1500; // rpm
   private double maxdrumVelocity = 4000; // RPM
 
   private final boolean lowCeiling = false;
@@ -163,9 +178,9 @@ public class Shooter extends SubsystemBase {
     return hoodPIDController.atSetpoint();
   }
 
-  public boolean isHoodAtSetPoint() {
-    return isHoodAtSetpoint();
-  }
+  // public boolean isHoodAtSetPoint() {
+  //   return isHoodAtSetpoint();
+  // }
 
   public void resetHood() {
     setHoodSetPoint(Math.toRadians(2));
@@ -176,7 +191,7 @@ public class Shooter extends SubsystemBase {
   }
 
   public boolean isDrumAtSpeed() {
-    return leftTopDrumLeader.getClosedLoopError().getValueAsDouble() < 2;
+    return leftTopDrumLeader.getClosedLoopError().getValueAsDouble() < 1.5;
   }
   // Set hood in radians from (2 - 47 Degrees)
 
@@ -184,11 +199,28 @@ public class Shooter extends SubsystemBase {
     hoodTargetAngle = MathUtil.clamp(hoodSetPoint, Math.toRadians(2), Math.toRadians(47));
   }
 
+  public boolean isPassing() {
+    return passingEnabled.get();
+  }
+
+  public double getDrumSpeedScale() {
+    if (targetDrumRpm <= 0) {
+      return 1.0;
+    }
+    double currentDrumRpm = leftTopDrumLeader.getVelocity().getValueAsDouble() * 60.0;
+    double ratio = currentDrumRpm / targetDrumRpm;
+    double baseScale = MathUtil.clamp(ratio, 0.0, 1.0);
+    return baseScale * passingScaleMultiplier.get();
+  }
+
   public void periodic() {
     hoodMotor.setControl(
         new com.ctre.phoenix6.controls.VoltageOut(
             hoodPIDController.calculate(getHoodAngle(), hoodTargetAngle)
                 + hoodFFWController.calculate(getHoodAngle(), 0)));
+    org.littletonrobotics.junction.Logger.recordOutput("Shooter/IsPassing", isPassing());
+    org.littletonrobotics.junction.Logger.recordOutput(
+        "Shooter/DrumSpeedScale", getDrumSpeedScale());
   }
 
   public void spinUpDrum() {
@@ -197,6 +229,7 @@ public class Shooter extends SubsystemBase {
 
   // Set drum speed to a specific velocity in RPM
   public void setDrumVelocity(double velocity) {
+    this.targetDrumRpm = velocity;
     if (!lowCeiling) {
       leftTopDrumLeader.setControl(
           new com.ctre.phoenix6.controls.VelocityVoltage(
@@ -212,6 +245,7 @@ public class Shooter extends SubsystemBase {
   public void HoldFeeder() {
     indexerFeeder.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(0));
   }
+
   // Sets Tunnel PID velocity to 0
   public void HoldTunnel() {
     indexerTunnel.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(0));
@@ -219,18 +253,23 @@ public class Shooter extends SubsystemBase {
 
   // Set Tunnel Velocity in RPM
   public void setTunnelVelocity(double velocity) {
-    indexerTunnel.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(velocity / 60));
+    double scale = (isPassing() && velocity > 0) ? getDrumSpeedScale() : 1.0;
+    indexerTunnel.setControl(
+        new com.ctre.phoenix6.controls.VelocityVoltage((velocity * scale) / 60));
   }
 
   // Set Feeder Velocity in RPM
   public void setFeederVelocity(double velocity) {
-    indexerFeeder.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(velocity / 60));
+    double scale = (isPassing() && velocity > 0) ? getDrumSpeedScale() : 1.0;
+    indexerFeeder.setControl(
+        new com.ctre.phoenix6.controls.VelocityVoltage((velocity * scale) / 60));
   }
 
   // Sets Voltage out for Tunnel to 0 (roll to stop)
   public void stopTunnel() {
     indexerTunnel.setControl(new com.ctre.phoenix6.controls.VoltageOut(0));
   }
+
   // Sets Voltage out for Feeder to 0 (roll to stop)
   public void stopFeeder() {
     indexerFeeder.setControl(new com.ctre.phoenix6.controls.VoltageOut(0));
@@ -238,6 +277,7 @@ public class Shooter extends SubsystemBase {
 
   // Sets all Voltages for indexer,feeder and drum to 0 (roll to stop)
   public void stop() {
+    targetDrumRpm = 0.0;
     leftTopDrumLeader.setControl(new com.ctre.phoenix6.controls.VoltageOut(0.0));
     indexerFeeder.setControl(new com.ctre.phoenix6.controls.VoltageOut(0.0));
     indexerTunnel.setControl(new com.ctre.phoenix6.controls.VoltageOut(0.0));
