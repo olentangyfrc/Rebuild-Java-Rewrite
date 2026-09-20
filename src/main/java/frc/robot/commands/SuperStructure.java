@@ -112,11 +112,12 @@ public class SuperStructure {
   }
 
   public static Command intakeSTART(Intake intake) {
-    return Commands.run(
+    return Commands.runEnd(
         () -> {
           intake.start();
           intake.setPivotSetPoint(0);
         },
+        () -> intake.stop(),
         intake);
   }
 

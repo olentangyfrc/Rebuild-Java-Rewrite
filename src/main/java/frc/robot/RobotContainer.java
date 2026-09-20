@@ -170,9 +170,6 @@ public class RobotContainer {
     controller.y().whileTrue(SuperStructure.intakeSTART(intake));
     // controller.y().whileTrue(SuperStructure.driveIntakeDown(intake, 0.5));
 
-
-
-
     // Lock to 0° when A button is held
 
     // controller
@@ -191,12 +188,15 @@ public class RobotContainer {
             DriveCommands.pointToHub(
                 drive, () -> controller.getLeftY(), () -> controller.getLeftX()));
 
-    // Snake Drive: Align heading with direction of motion when holding A button
+    // Snake Drive: Align heading with direction of motion when holding A button, with Intake
+    // running
     controller
         .a()
         .whileTrue(
-            DriveCommands.snakeDrive(
-                drive, () -> controller.getLeftY(), () -> controller.getLeftX()));
+            Commands.parallel(
+                DriveCommands.snakeDrive(
+                    drive, () -> controller.getLeftY(), () -> controller.getLeftX()),
+                SuperStructure.intakeSTART(intake)));
 
     // Shoot on the Move: Aim at velocity-compensated virtual Hub while driving on Right Trigger
     controller
