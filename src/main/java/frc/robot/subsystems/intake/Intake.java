@@ -127,11 +127,24 @@ public class Intake extends SubsystemBase {
     }
   }
 
+  private double staticDownVoltage = 0.0;
+
+  public void setStaticDownVoltage(double voltage) {
+    this.staticDownVoltage = voltage;
+  }
+
+  public void driveIntakeDown(double voltage) {
+    setPivotSetPoint(Math.toRadians(0.5));
+    start();
+    setStaticDownVoltage(voltage);
+  }
+
   public void setPivotSetPoint(double pivotSetPoint) {
     pivotTargetAngle = MathUtil.clamp(pivotSetPoint, Math.toRadians(0.5), Math.toRadians(125));
   }
 
   public void resetIntake() {
+    staticDownVoltage = 0.0;
     setPivotSetPoint(0);
     intakeIdle();
   }
@@ -147,10 +160,19 @@ public class Intake extends SubsystemBase {
   static double lastAngle = 0;
 
   public void periodic() {
-    pivotMotor.setControl(
-        new com.ctre.phoenix6.controls.VoltageOut(
-            pivotPIDController.calculate(getPivotAngle(), pivotTargetAngle)
-                + pivotFFWController.calculate(getPivotAngle(), 0)));
+    double pidOutput = pivotPIDController.calculate(getPivotAngle(), pivotTargetAngle);
+    double ffOutput = pivotFFWController.calculate(getPivotAngle(), 0);
+    double totalVoltage = pidOutput + ffOutput + staticDownVoltage;
+    pivotMotor.setControl(new com.ctre.phoenix6.controls.VoltageOut(totalVoltage));
+  }
+
+  /**
+   * Static command to drive the intake down with rollers running and a constant downward voltage.
+   */
+  public static edu.wpi.first.wpilibj2.command.Command driveIntakeDown(
+      Intake intake, double voltage) {
+    return edu.wpi.first.wpilibj2.command.Commands.runEnd(
+        () -> intake.driveIntakeDown(voltage), () -> intake.resetIntake(), intake);
   }
 
   // tell velocity in RPS

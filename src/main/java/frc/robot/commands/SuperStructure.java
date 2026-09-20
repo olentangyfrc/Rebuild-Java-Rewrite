@@ -119,4 +119,13 @@ public class SuperStructure {
         },
         intake);
   }
+
+  public static Command intakeWithDrive(Intake intake, double downwardVoltage) {
+    return Commands.runEnd(
+        () -> intake.driveIntakeDown(downwardVoltage), () -> intake.resetIntake(), intake);
+  }
+
+  public Command intakeWithDrive(double downwardVoltage) {
+    return intakeWithDrive(intake, downwardVoltage);
+  }
 }

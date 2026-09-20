@@ -16,6 +16,11 @@ public class IntakeCommands {
         intake);
   }
 
+  public static Command driveIntakeDown(Intake intake, double voltage) {
+    return Commands.runEnd(
+        () -> intake.driveIntakeDown(voltage), () -> intake.resetIntake(), intake);
+  }
+
   public static Command startIntake(Intake intake) {
     return Commands.run(
         () -> {
