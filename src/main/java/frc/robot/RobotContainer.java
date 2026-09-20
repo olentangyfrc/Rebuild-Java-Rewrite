@@ -168,11 +168,10 @@ public class RobotContainer {
     // controller.rightBumper().onFalse(SuperStructure.stopAll(shooter, intake, serializer));
 
     controller.y().whileTrue(SuperStructure.intakeSTART(intake));
-    // controller.b().whileTrue(SerializerCommands.startSerializer(serializer));
+    // controller.y().whileTrue(SuperStructure.driveIntakeDown(intake, 0.5));
 
-    // controller.x().whileTrue(IntakeCommands.stopagitationIntake(intake));
-    // controller.rightBumper().onTrue(ShooterCommands.setHoodAngle(shooter, Math.toRadians(47)));
-    // controller.leftBumper().onTrue(ShooterCommands.setHoodAngle(shooter, Math.toRadians(2)));
+
+
 
     // Lock to 0° when A button is held
 
