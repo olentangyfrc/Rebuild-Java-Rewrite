@@ -125,6 +125,7 @@ public class SuperStructure {
         () -> intake.driveIntakeDown(downwardVoltage), () -> intake.resetIntake(), intake);
   }
 
+  // HELPER MEATHOD DONT GET RID OF ME
   public Command intakeWithDrive(double downwardVoltage) {
     return intakeWithDrive(intake, downwardVoltage);
   }
