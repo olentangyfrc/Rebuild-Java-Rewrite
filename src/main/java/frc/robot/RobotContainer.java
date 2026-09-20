@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.IntakeCommands;
 import frc.robot.commands.SuperStructure;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.Drive;
@@ -163,9 +164,11 @@ public class RobotContainer {
     // controller.x().whileTrue(SerializerCommands.stopSerializer(serializer));
     // controller.a().onTrue(ShooterCommands.stop(shooter));
     // controller.y().onTrue(ShooterCommands.spinUpDrum(shooter));
-    controller.leftBumper().whileTrue(SuperStructure.stopAll(shooter, intake, serializer));
+    controller.leftBumper().onTrue(SuperStructure.stopAll(shooter, intake, serializer));
     controller.rightBumper().whileTrue(SuperStructure.shoot(drive, shooter, intake, serializer));
     // controller.rightBumper().onFalse(SuperStructure.stopAll(shooter, intake, serializer));
+
+    controller.x().whileTrue(IntakeCommands.startagitationIntake(intake));
 
     controller.y().whileTrue(SuperStructure.intakeSTART(intake));
     // controller.y().whileTrue(SuperStructure.driveIntakeDown(intake, 0.5));
@@ -182,11 +185,11 @@ public class RobotContainer {
     //             () -> Rotation2d.fromDegrees(180)));
 
     // Point toward the Hub while X button is held
-    controller
-        .x()
-        .whileTrue(
-            DriveCommands.pointToHub(
-                drive, () -> controller.getLeftY(), () -> controller.getLeftX()));
+    // controller
+    //     .x()
+    //     .whileTrue(
+    //         DriveCommands.pointToHub(
+    //             drive, () -> controller.getLeftY(), () -> controller.getLeftX()));
 
     // Snake Drive: Align heading with direction of motion when holding A button, with Intake
     // running

@@ -103,7 +103,7 @@ public class Intake extends SubsystemBase {
         agitationTimer.restart();
         isAgitating = true;
       }
-      start();
+      intakeIdle();
 
       double time = agitationTimer.get();
 

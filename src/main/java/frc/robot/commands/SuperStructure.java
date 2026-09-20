@@ -94,7 +94,7 @@ public class SuperStructure {
   }
 
   public static Command stopAll(Shooter shooter, Intake intake, Serializer serializer) {
-    return Commands.run(
+    return Commands.runOnce(
         () -> {
           shooter.stop();
           shooter.resetHood();
