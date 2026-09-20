@@ -66,6 +66,31 @@ public class SuperStructure {
         intake,
         serializer);
   }
+ public static Command pass(Drive drive, Shooter shooter, Intake intake, Serializer serializer) {
+    return Commands.run(
+        () -> {
+          boolean usePose = useDrivetrainPose.get();
+          double distance = usePose ? drive.getDistanceFromPass() : distanceOverride.get();
+          shooter.pass(distance);
+          if (shooter.isDrumAtSpeed() && shooter.isHoodAtSetpoint()) {
+
+            shooter.startfeed();
+            serializer.start();
+
+            intake.startagitationIntake();
+            // intake.setPivotSetPoint(0);
+
+          } else {
+            shooter.waitforfeed();
+            intake.resetIntake();
+            serializer.stop();
+          }
+        },
+        shooter,
+        intake,
+        serializer);
+  }
+
 
   /** Command to shoot on the move for the hub using velocity-compensated distance. */
   public static Command shootOnTheMove(

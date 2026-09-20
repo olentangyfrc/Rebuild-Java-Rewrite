@@ -293,6 +293,17 @@ public class Shooter extends SubsystemBase {
       setDrumVelocity(params.flywheelRpm());
     }
   }
+  public void pass(double distanceMeters) {
+    if (shooterOverrideEnabled.get()) {
+      setHoodSetPoint(Math.toRadians(manualHoodAngleDegrees.get()));
+      setDrumVelocity(manualDrumRPM.get());
+    } else {
+      ShooterUtil.ShooterParameters params = ShooterUtil.getInterpolatedValuesPass(distanceMeters);
+      setHoodSetPoint(params.hoodAngleRad());
+      setDrumVelocity(params.flywheelRpm());
+    }
+  }
+
 
   public void startfeed() {
     setTunnelVelocity(5000);

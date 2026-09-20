@@ -397,6 +397,14 @@ public class Drive extends SubsystemBase {
     return hubPosition.minus(currentTranslation).getAngle().plus(new Rotation2d(Math.PI));
   }
 
+    public Rotation2d getRotationToPassFinal() {
+    Pose2d robotPose = getPose();
+    Pose2d passPosition = new Pose2d(robotPose.getX() + 2, robotPose.getY(), Rotation2d.fromDegrees(0));
+    Translation2d passPositionTranslation = passPosition.getTranslation();
+    Translation2d currentTranslation = getPose().getTranslation();
+    return passPositionTranslation.minus(currentTranslation).getAngle().plus(new Rotation2d(Math.PI));
+  }
+
   /**
    * Calculates the virtual hub position on the field to compensate for current robot velocity when
    * shooting on the move.
@@ -435,6 +443,11 @@ public class Drive extends SubsystemBase {
   public Rotation2d getShootOnTheMoveRotation() {
     return getRotationToHub(getVirtualHubPosition());
   }
+  @AutoLogOutput(key = "Drive/PassRotation")
+  public Rotation2d getPassRotation() {
+    return getRotationToPassFinal();
+  }
+
 
   /** Resets the current odometry pose. */
   public void setPose(Pose2d pose) {

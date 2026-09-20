@@ -207,6 +207,14 @@ public class RobotContainer {
                 DriveCommands.shootOnTheMove(
                     drive, () -> controller.getLeftY(), () -> controller.getLeftX()),
                 SuperStructure.shootOnTheMove(drive, shooter, intake, serializer)));
+// pass the bellow yalls 
+    controller
+        .leftTrigger()
+        .whileTrue(
+            Commands.parallel(
+                DriveCommands.passOnTheMove(
+                    drive, () -> controller.getLeftY(), () -> controller.getLeftX()),
+                SuperStructure.pass(drive, shooter, intake, serializer)));
 
     // Reset gyro to 0° when B button is pressed
     controller
