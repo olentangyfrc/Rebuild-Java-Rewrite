@@ -90,8 +90,6 @@ public class SuperStructure {
         serializer);
   }
 
-  /** Deprecated alias for {@link #shootForHub(Drive, Shooter, Intake, Serializer)}. */
-  @Deprecated
   public static Command shootOnTheMove(
       Drive drive, Shooter shooter, Intake intake, Serializer serializer) {
     return shootForHub(drive, shooter, intake, serializer);
@@ -152,15 +150,43 @@ public class SuperStructure {
     return intakeStart(intake);
   }
 
+  /**
+   * Command to drive along the X axis until targetX is reached while simultaneously intaking fuel
+   * and warming up the shooter to 1800 RPM.
+   *
+   * <p>Uses deadlineWith so the overall command finishes as soon as the drive bump reaches targetX.
+   */
+  public static Command bump(
+      Drive drive, Shooter shooter, Intake intake, double targetX, double bumpSpeed) {
+    return DriveCommands.bump(drive, targetX, bumpSpeed)
+        .deadlineWith(
+            intakeStart(intake), Commands.run(() -> shooter.setDrumVelocity(1800.0), shooter));
+  }
+
+  public Command bump(double targetX, double bumpSpeed) {
+    return bump(drive, shooter, intake, targetX, bumpSpeed);
+  }
+
   /** Registers PathPlanner named commands for SuperStructure actions. */
   public static void registerNamedCommands(
       Drive drive, Shooter shooter, Intake intake, Serializer serializer) {
+    NamedCommands.registerCommand("shootForHub", shootForHub(drive, shooter, intake, serializer));
     NamedCommands.registerCommand(
-        "shootForHub", shootForHub(drive, shooter, intake, serializer).withTimeout(2.0));
-    NamedCommands.registerCommand(
-        "shootOnTheMove", shootForHub(drive, shooter, intake, serializer).withTimeout(2.0));
+        "shootOnTheMove", shootForHub(drive, shooter, intake, serializer));
     NamedCommands.registerCommand("intake", intakeStart(intake));
     NamedCommands.registerCommand("stopAll", stopAll(shooter, intake, serializer));
+    NamedCommands.registerCommand("bump", bump(drive, shooter, intake, 4.5, -1.6));
+  }
+
+  /** Registers a custom bump NamedCommand with specified targetX and speed. */
+  public static void registerBumpCommand(
+      Drive drive,
+      Shooter shooter,
+      Intake intake,
+      String commandName,
+      double targetX,
+      double bumpSpeed) {
+    NamedCommands.registerCommand(commandName, bump(drive, shooter, intake, targetX, bumpSpeed));
   }
 
   /** Registers PathPlanner named commands using this SuperStructure instance. */

@@ -1,0 +1,639 @@
+{
+ "name":"AutoPaths",
+ "version":2,
+ "type":"Swerve",
+ "variables":{
+  "expressions":{
+   "FDLength":{
+    "dimension":"Length",
+    "var":{
+     "exp":"8.0137 m",
+     "val":8.0137
+    }
+   },
+   "Field_Length":{
+    "dimension":"Length",
+    "var":{
+     "exp":"8.0137 m",
+     "val":8.0137
+    }
+   },
+   "MaxACC":{
+    "dimension":"LinAcc",
+    "var":{
+     "exp":"12.5 m / s ^ 2",
+     "val":12.5
+    }
+   },
+   "MaxVel":{
+    "dimension":"LinVel",
+    "var":{
+     "exp":"4.6 m / s",
+     "val":4.6
+    }
+   },
+   "MaximumDrivetrain":{
+    "dimension":"LinVel",
+    "var":{
+     "exp":"4.6 m / s",
+     "val":4.6
+    }
+   },
+   "RStealStart":{
+    "dimension":"Number",
+    "var":{
+     "exp":"0",
+     "val":0.0
+    }
+   },
+   "SwipeVel":{
+    "dimension":"LinVel",
+    "var":{
+     "exp":"2 m / s",
+     "val":2.0
+    }
+   }
+  },
+  "poses":{
+   "LAGBUMP":{
+    "x":{
+     "exp":"5.8 m",
+     "val":5.8
+    },
+    "y":{
+     "exp":"5.62 m",
+     "val":5.62
+    },
+    "heading":{
+     "exp":"2.4 rad",
+     "val":2.4
+    }
+   },
+   "LAGCLOSE":{
+    "x":{
+     "exp":"6.1 m",
+     "val":6.1
+    },
+    "y":{
+     "exp":"7.27 m",
+     "val":7.27
+    },
+    "heading":{
+     "exp":"0 rad",
+     "val":0.0
+    }
+   },
+   "LAGMID":{
+    "x":{
+     "exp":"8.3 m",
+     "val":8.3
+    },
+    "y":{
+     "exp":"6.82 m",
+     "val":6.82
+    },
+    "heading":{
+     "exp":"-1.5 rad",
+     "val":-1.5
+    }
+   },
+   "LAGMID2":{
+    "x":{
+     "exp":"8.3 m",
+     "val":8.3
+    },
+    "y":{
+     "exp":"4.67 m",
+     "val":4.67
+    },
+    "heading":{
+     "exp":"-1.5 rad",
+     "val":-1.5
+    }
+   },
+   "LAGU2":{
+    "x":{
+     "exp":"6 m",
+     "val":6.0
+    },
+    "y":{
+     "exp":"7.53 m",
+     "val":7.53
+    },
+    "heading":{
+     "exp":"0 rad",
+     "val":0.0
+    }
+   },
+   "LAGU3":{
+    "x":{
+     "exp":"7.5 m",
+     "val":7.5
+    },
+    "y":{
+     "exp":"4.67 m",
+     "val":4.67
+    },
+    "heading":{
+     "exp":"2.4 rad",
+     "val":2.4
+    }
+   },
+   "LAGU4":{
+    "x":{
+     "exp":"7.64 m",
+     "val":7.64
+    },
+    "y":{
+     "exp":"5.61 m",
+     "val":5.61
+    },
+    "heading":{
+     "exp":"2.4 rad",
+     "val":2.4
+    }
+   },
+   "LAGend":{
+    "x":{
+     "exp":"6.8 m",
+     "val":6.8
+    },
+    "y":{
+     "exp":"4.77 m",
+     "val":4.77
+    },
+    "heading":{
+     "exp":"-1.32 rad",
+     "val":-1.32
+    }
+   },
+   "LAGstart":{
+    "x":{
+     "exp":"4.48 m",
+     "val":4.48
+    },
+    "y":{
+     "exp":"7.59 m",
+     "val":7.59
+    },
+    "heading":{
+     "exp":"0 rad",
+     "val":0.0
+    }
+   },
+   "LBumpApp":{
+    "x":{
+     "exp":"7 m",
+     "val":7.0
+    },
+    "y":{
+     "exp":"5.62 m",
+     "val":5.62
+    },
+    "heading":{
+     "exp":"2.4 rad",
+     "val":2.4
+    }
+   },
+   "LCLOSeSwipe1":{
+    "x":{
+     "exp":"6.52 m",
+     "val":6.52
+    },
+    "y":{
+     "exp":"6.27 m",
+     "val":6.27
+    },
+    "heading":{
+     "exp":"-1.37 rad",
+     "val":-1.37
+    }
+   },
+   "LTApp":{
+    "x":{
+     "exp":"2.9 m",
+     "val":2.9
+    },
+    "y":{
+     "exp":"7.57 m",
+     "val":7.57
+    },
+    "heading":{
+     "exp":"0 rad",
+     "val":0.0
+    }
+   },
+   "RAGCLOSE":{
+    "x":{
+     "exp":"6.6 m",
+     "val":6.6
+    },
+    "y":{
+     "exp":"0.8 m",
+     "val":0.8
+    },
+    "heading":{
+     "exp":"0.5 rad",
+     "val":0.5
+    }
+   },
+   "RAGMID":{
+    "x":{
+     "exp":"8.3 m",
+     "val":8.3
+    },
+    "y":{
+     "exp":"1.25 m",
+     "val":1.25
+    },
+    "heading":{
+     "exp":"1.5 rad",
+     "val":1.5
+    }
+   },
+   "RAGMID2":{
+    "x":{
+     "exp":"8.3 m",
+     "val":8.3
+    },
+    "y":{
+     "exp":"3.4 m",
+     "val":3.4
+    },
+    "heading":{
+     "exp":"1.5 rad",
+     "val":1.5
+    }
+   },
+   "RAGU2":{
+    "x":{
+     "exp":"6 m",
+     "val":6.0
+    },
+    "y":{
+     "exp":"0.54 m",
+     "val":0.54
+    },
+    "heading":{
+     "exp":"0 rad",
+     "val":0.0
+    }
+   },
+   "RAGU3":{
+    "x":{
+     "exp":"7.5 m",
+     "val":7.5
+    },
+    "y":{
+     "exp":"RAGMID2.y",
+     "val":3.4
+    },
+    "heading":{
+     "exp":"2.3974299990394363 rad",
+     "val":2.3974299990394363
+    }
+   },
+   "RAGU4":{
+    "x":{
+     "exp":"7.642584800720215 m",
+     "val":7.642584800720215
+    },
+    "y":{
+     "exp":"2.4648773670196533 m",
+     "val":2.4648773670196533
+    },
+    "heading":{
+     "exp":"-2.3974299990394363 rad",
+     "val":-2.3974299990394363
+    }
+   },
+   "RAGend":{
+    "x":{
+     "exp":"6.8 m",
+     "val":6.8
+    },
+    "y":{
+     "exp":"3.3 m",
+     "val":3.3
+    },
+    "heading":{
+     "exp":"1.319 rad",
+     "val":1.319
+    }
+   },
+   "RBUMP":{
+    "x":{
+     "exp":"5.8 m",
+     "val":5.8
+    },
+    "y":{
+     "exp":"2.5 m",
+     "val":2.5
+    },
+    "heading":{
+     "exp":"2.36 rad",
+     "val":2.36
+    }
+   },
+   "RBUMPAG":{
+    "x":{
+     "exp":"RAGMID2.x - 1.6 m",
+     "val":6.700000000000001
+    },
+    "y":{
+     "exp":"RAGMID2.y - 0.9 m",
+     "val":2.5
+    },
+    "heading":{
+     "exp":"-2.3760938259055253 rad",
+     "val":-2.3760938259055253
+    }
+   },
+   "RBumpAPP":{
+    "x":{
+     "exp":"7 m",
+     "val":7.0
+    },
+    "y":{
+     "exp":"RBUMP.y",
+     "val":2.5
+    },
+    "heading":{
+     "exp":"180 deg",
+     "val":3.141592653589793
+    }
+   },
+   "RCLOSESwipe1":{
+    "x":{
+     "exp":"6.524912357330322 m",
+     "val":6.524912357330322
+    },
+    "y":{
+     "exp":"1.8026224374771118 m",
+     "val":1.802622437477112
+    },
+    "heading":{
+     "exp":"1.365400012507415 rad",
+     "val":1.365400012507415
+    }
+   },
+   "RD1End":{
+    "x":{
+     "exp":"7 m",
+     "val":7.0
+    },
+    "y":{
+     "exp":"0.54 m",
+     "val":0.54
+    },
+    "heading":{
+     "exp":"3.14159 rad",
+     "val":3.14159
+    }
+   },
+   "RDBump1":{
+    "x":{
+     "exp":"5.96 m",
+     "val":5.96
+    },
+    "y":{
+     "exp":"2.12 m",
+     "val":2.12
+    },
+    "heading":{
+     "exp":"1.4289 rad",
+     "val":1.4289
+    }
+   },
+   "RDBump2":{
+    "x":{
+     "exp":"7.238 m",
+     "val":7.238
+    },
+    "y":{
+     "exp":"3.122 m",
+     "val":3.122
+    },
+    "heading":{
+     "exp":"-1.8997 rad",
+     "val":-1.8997
+    }
+   },
+   "RDBump3":{
+    "x":{
+     "exp":"7.03 m",
+     "val":7.03
+    },
+    "y":{
+     "exp":"1.6967 m",
+     "val":1.6967
+    },
+    "heading":{
+     "exp":"-2.5355 rad",
+     "val":-2.5355
+    }
+   },
+   "RDHub":{
+    "x":{
+     "exp":"6.14 m",
+     "val":6.14
+    },
+    "y":{
+     "exp":"4.11 m",
+     "val":4.11
+    },
+    "heading":{
+     "exp":"0.7854 rad",
+     "val":0.7854
+    }
+   },
+   "RDHubCenter":{
+    "x":{
+     "exp":"7.146 m",
+     "val":7.146
+    },
+    "y":{
+     "exp":"4.105 m",
+     "val":4.105
+    },
+    "heading":{
+     "exp":"-0.7634 rad",
+     "val":-0.7634
+    }
+   },
+   "RDStart":{
+    "x":{
+     "exp":"6 m",
+     "val":6.0
+    },
+    "y":{
+     "exp":"0.54 m",
+     "val":0.54
+    },
+    "heading":{
+     "exp":"0 rad",
+     "val":0.0
+    }
+   },
+   "RStart":{
+    "x":{
+     "exp":"4.48 m",
+     "val":4.48
+    },
+    "y":{
+     "exp":"0.485 m",
+     "val":0.485
+    },
+    "heading":{
+     "exp":"0 rad",
+     "val":0.0
+    }
+   },
+   "RTApp":{
+    "x":{
+     "exp":"2.95 m",
+     "val":2.95
+    },
+    "y":{
+     "exp":"0.5 m",
+     "val":0.5
+    },
+    "heading":{
+     "exp":"0 rad",
+     "val":0.0
+    }
+   },
+   "RTrenchInt":{
+    "x":{
+     "exp":"4.8 m",
+     "val":4.8
+    },
+    "y":{
+     "exp":"0.66 m",
+     "val":0.66
+    },
+    "heading":{
+     "exp":"0 rad",
+     "val":0.0
+    }
+   },
+   "RTrenchShoot":{
+    "x":{
+     "exp":"2.8 m",
+     "val":2.8
+    },
+    "y":{
+     "exp":"1.8 m",
+     "val":1.8
+    },
+    "heading":{
+     "exp":"0 rad",
+     "val":0.0
+    }
+   },
+   "RTrenchShootApp":{
+    "x":{
+     "exp":"3.5 m",
+     "val":3.5
+    },
+    "y":{
+     "exp":"0.75 m",
+     "val":0.75
+    },
+    "heading":{
+     "exp":"270 deg",
+     "val":4.71238898038469
+    }
+   },
+   "rst":{
+    "x":{
+     "exp":"3.5885822772979736 m",
+     "val":3.5885822772979736
+    },
+    "y":{
+     "exp":"0.5234946608543396 m",
+     "val":0.5234946608543396
+    },
+    "heading":{
+     "exp":"0 deg",
+     "val":0.0
+    }
+   }
+  }
+ },
+ "config":{
+  "frontLeft":{
+   "x":{
+    "exp":"10.878 in",
+    "val":0.27630119999999997
+   },
+   "y":{
+    "exp":"10.878 in",
+    "val":0.27630119999999997
+   }
+  },
+  "backLeft":{
+   "x":{
+    "exp":"-10.878 in",
+    "val":-0.27630119999999997
+   },
+   "y":{
+    "exp":"10.878 in",
+    "val":0.27630119999999997
+   }
+  },
+  "mass":{
+   "exp":"160 lbs",
+   "val":72.57477920000001
+  },
+  "inertia":{
+   "exp":"4.75 kg m ^ 2",
+   "val":4.75
+  },
+  "gearing":{
+   "exp":"5.63",
+   "val":5.63
+  },
+  "radius":{
+   "exp":"1.913 in",
+   "val":0.0485902
+  },
+  "vmax":{
+   "exp":"5800 RPM",
+   "val":607.3745796940267
+  },
+  "tmax":{
+   "exp":"1.2 N * m",
+   "val":1.2
+  },
+  "cof":{
+   "exp":"1.5",
+   "val":1.5
+  },
+  "bumper":{
+   "front":{
+    "exp":"18 in",
+    "val":0.4572
+   },
+   "side":{
+    "exp":"18 in",
+    "val":0.4572
+   },
+   "back":{
+    "exp":"18 in",
+    "val":0.4572
+   }
+  },
+  "differentialTrackWidth":{
+   "exp":"22 in",
+   "val":0.5588
+  }
+ },
+ "generationFeatures":[],
+ "codegen":{
+  "root":null,
+  "genVars":true,
+  "genTrajData":true,
+  "useChoreoLib":true
+ }
+}

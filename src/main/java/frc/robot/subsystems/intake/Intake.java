@@ -157,13 +157,10 @@ public class Intake extends SubsystemBase {
     setIntakeAgitation(false);
   }
 
-  // Deprecated backward-compatibility aliases
-  @Deprecated
   public void startagitationIntake() {
     startAgitationIntake();
   }
 
-  @Deprecated
   public void stopagitationIntake() {
     stopAgitationIntake();
   }

@@ -327,4 +327,24 @@ public class DriveCommands {
   public static Command resetPoseToZero(Drive drive) {
     return Commands.runOnce(() -> drive.setPose(Pose2d.kZero), drive).ignoringDisable(true);
   }
+
+  public static Command bump(Drive drive, double targetX, double bumpSpeed) {
+    return Commands.run(
+            () ->
+                drive.runVelocity(
+                    ChassisSpeeds.fromFieldRelativeSpeeds(
+                        new ChassisSpeeds(bumpSpeed, 0.0, 0.0), drive.getRotation())),
+            drive)
+        .until(
+            () -> {
+              double currentX = drive.getPose().getX();
+              if (bumpSpeed > 0) {
+                return currentX > targetX;
+              } else if (bumpSpeed < 0) {
+                return currentX < targetX;
+              }
+              return true;
+            })
+        .finallyDo(interrupted -> drive.runVelocity(new ChassisSpeeds()));
+  }
 }
