@@ -5,30 +5,17 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.serializer.Serializer;
 
 public class SerializerCommands {
-
-  Serializer serializer;
+  private SerializerCommands() {}
 
   public static Command startSerializer(Serializer serializer) {
-    return Commands.run(
-        () -> {
-          serializer.start();
-        },
-        serializer);
+    return Commands.run(() -> serializer.start(), serializer);
   }
 
   public static Command stopSerializer(Serializer serializer) {
-    return Commands.run(
-        () -> {
-          serializer.stop();
-        },
-        serializer);
+    return Commands.run(() -> serializer.stop(), serializer);
   }
 
   public static Command reverseSerializer(Serializer serializer) {
-    return Commands.run(
-        () -> {
-          serializer.reverse();
-        },
-        serializer);
+    return Commands.run(() -> serializer.reverse(), serializer);
   }
 }

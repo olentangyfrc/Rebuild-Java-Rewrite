@@ -143,6 +143,23 @@ public class DriveCommands {
   }
 
   /**
+   * Field-relative drive command using joysticks for linear control and PID targeting to snap the
+   * drivetrain heading to a fixed target angle (e.g. 0°, 90°, 180°).
+   */
+  public static Command snapToAngle(
+      Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier, Rotation2d targetAngle) {
+    return joystickDriveAtAngle(drive, xSupplier, ySupplier, () -> targetAngle);
+  }
+
+  /**
+   * Overloaded snapToAngle command without joystick translation input (rotates in place to target
+   * angle).
+   */
+  public static Command snapToAngle(Drive drive, Rotation2d targetAngle) {
+    return snapToAngle(drive, () -> 0.0, () -> 0.0, targetAngle);
+  }
+
+  /**
    * Field relative drive command using joysticks for linear control and PID targeting to
    * continuously point/align the drivetrain heading toward the Hub.
    */
@@ -182,52 +199,31 @@ public class DriveCommands {
 
   /**
    * Field-relative drive command using joysticks for linear control and PID targeting to
-   * continuously point/align the drivetrain heading toward the velocity-compensated virtual Hub. If
-   * no translation joystick input is provided, locks the drivetrain in an X pattern to prevent
-   * pushing.
+   * continuously point/align the drivetrain heading toward the velocity-compensated virtual Hub.
+   * Works both on the move and while stationary.
    */
+  public static Command shootForHub(
+      Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
+    return joystickDriveAtAngle(drive, xSupplier, ySupplier, drive::getShootForHubRotation);
+  }
+
+  /**
+   * Overloaded shootForHub command without joystick translation input (points at virtual Hub in
+   * place).
+   */
+  public static Command shootForHub(Drive drive) {
+    return shootForHub(drive, () -> 0.0, () -> 0.0);
+  }
+
+  /**
+   * Field-relative drive command using joysticks to point at the virtual Hub.
+   *
+   * @deprecated Use {@link #shootForHub(Drive, DoubleSupplier, DoubleSupplier)} instead.
+   */
+  @Deprecated
   public static Command shootOnTheMove(
       Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
-    ProfiledPIDController angleController =
-        new ProfiledPIDController(
-            ANGLE_KP,
-            0.0,
-            ANGLE_KD,
-            new TrapezoidProfile.Constraints(ANGLE_MAX_VELOCITY, ANGLE_MAX_ACCELERATION));
-    angleController.enableContinuousInput(-Math.PI, Math.PI);
-
-    return Commands.run(
-            () -> {
-              double x = xSupplier.getAsDouble();
-              double y = ySupplier.getAsDouble();
-              Translation2d linearVelocity = getLinearVelocityFromJoysticks(x, y);
-
-              if (linearVelocity.getNorm() <= 0.0) {
-                drive.stopWithX();
-              } else {
-                double omega =
-                    angleController.calculate(
-                        drive.getRotation().getRadians(),
-                        drive.getShootOnTheMoveRotation().getRadians());
-
-                ChassisSpeeds speeds =
-                    new ChassisSpeeds(
-                        linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec(),
-                        linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec(),
-                        omega);
-                boolean isFlipped =
-                    DriverStation.getAlliance().isPresent()
-                        && DriverStation.getAlliance().get() == Alliance.Red;
-                drive.runVelocity(
-                    ChassisSpeeds.fromFieldRelativeSpeeds(
-                        speeds,
-                        isFlipped
-                            ? drive.getRotation().plus(new Rotation2d(Math.PI))
-                            : drive.getRotation()));
-              }
-            },
-            drive)
-        .beforeStarting(() -> angleController.reset(drive.getRotation().getRadians()));
+    return shootForHub(drive, xSupplier, ySupplier);
   }
 
   /**

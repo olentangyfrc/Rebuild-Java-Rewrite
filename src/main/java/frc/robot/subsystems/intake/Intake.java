@@ -149,15 +149,24 @@ public class Intake extends SubsystemBase {
     intakeIdle();
   }
 
-  public void startagitationIntake() {
+  public void startAgitationIntake() {
     setIntakeAgitation(true);
   }
 
-  public void stopagitationIntake() {
+  public void stopAgitationIntake() {
     setIntakeAgitation(false);
   }
 
-  static double lastAngle = 0;
+  // Deprecated backward-compatibility aliases
+  @Deprecated
+  public void startagitationIntake() {
+    startAgitationIntake();
+  }
+
+  @Deprecated
+  public void stopagitationIntake() {
+    stopAgitationIntake();
+  }
 
   public void periodic() {
     double pidOutput = pivotPIDController.calculate(getPivotAngle(), pivotTargetAngle);

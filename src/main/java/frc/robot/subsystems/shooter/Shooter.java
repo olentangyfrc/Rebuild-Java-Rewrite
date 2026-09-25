@@ -294,18 +294,34 @@ public class Shooter extends SubsystemBase {
     }
   }
 
-  public void startfeed() {
+  public void startFeed() {
     setTunnelVelocity(5000);
     setFeederVelocity(5000);
   }
 
-  public void waitforfeed() {
+  public void waitForFeed() {
     setTunnelVelocity((40 * 60));
     setFeederVelocity((-1800));
   }
 
-  public void stopfeed() {
+  public void stopFeed() {
     stopTunnel();
     stopFeeder();
+  }
+
+  // Deprecated backward-compatibility aliases
+  @Deprecated
+  public void startfeed() {
+    startFeed();
+  }
+
+  @Deprecated
+  public void waitforfeed() {
+    waitForFeed();
+  }
+
+  @Deprecated
+  public void stopfeed() {
+    stopFeed();
   }
 }

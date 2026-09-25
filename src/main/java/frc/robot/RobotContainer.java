@@ -8,8 +8,6 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -17,7 +15,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.commands.DriveCommands;
-import frc.robot.commands.IntakeCommands;
 import frc.robot.commands.SuperStructure;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.Drive;
@@ -153,47 +150,11 @@ public class RobotContainer {
             () -> controller.getLeftX(),
             () -> -controller.getRightX()));
 
-    // controller.a().whileTrue(SerializerCommands.startSerializer(serializer));
-    // controller.x().whileTrue(SerializerCommands.stopSerializer(serializer));
-    // controller.y().whileTrue(SerializerCommands.reverseSerializer(serializer));
-
-    // controller.a().onTrue(IntakeCommands.startIntake(intake));
-    // controller.b().whileTrue(IntakeCommands.stopIntake(intake));
-    // controller.x().whileTrue(IntakeCommands.ejectIntake(intake));
-    // controller.y().whileTrue(IntakeCommands.setIntakePosition(intake, 90));
-
-    // controller.rightTrigger().onTrue(ShooterCommands.spinUp(shooter, 0));
-    // controller.a().whileTrue(ShooterCommands.stop(shooter));
-    // controller.y().whileTrue(SerializerCommands.startSerializer(serializer));
-    // controller.x().whileTrue(SerializerCommands.stopSerializer(serializer));
-    // controller.a().onTrue(ShooterCommands.stop(shooter));
-    // controller.y().onTrue(ShooterCommands.spinUpDrum(shooter));
+    // Emergency stop all superstructure subsystems on Left Bumper
     controller.leftBumper().onTrue(SuperStructure.stopAll(shooter, intake, serializer));
-    controller.rightBumper().whileTrue(SuperStructure.shoot(drive, shooter, intake, serializer));
-    // controller.rightBumper().onFalse(SuperStructure.stopAll(shooter, intake, serializer));
 
-    controller.x().whileTrue(IntakeCommands.startagitationIntake(intake));
-
-    controller.y().whileTrue(SuperStructure.intakeSTART(intake));
-    // controller.y().whileTrue(SuperStructure.driveIntakeDown(intake, 0.5));
-
-    // Lock to 0° when A button is held
-
-    // controller
-    //     .a()
-    //     .whileTrue(
-    //         DriveCommands.joystickDriveAtAngle(
-    //             drive,
-    //             () -> controller.getLeftY(),
-    //             () -> controller.getLeftX(),
-    //             () -> Rotation2d.fromDegrees(180)));
-
-    // Point toward the Hub while X button is held
-    // controller
-    //     .x()
-    //     .whileTrue(
-    //         DriveCommands.pointToHub(
-    //             drive, () -> controller.getLeftY(), () -> controller.getLeftX()));
+    // Run intake while holding Y button
+    controller.y().whileTrue(SuperStructure.intakeStart(intake));
 
     // Snake Drive: Align heading with direction of motion when holding A button, with Intake
     // running
@@ -203,27 +164,17 @@ public class RobotContainer {
             Commands.parallel(
                 DriveCommands.snakeDrive(
                     drive, () -> controller.getLeftY(), () -> controller.getLeftX()),
-                SuperStructure.intakeSTART(intake)));
+                SuperStructure.intakeStart(intake)));
 
-    // Shoot on the Move: Aim at velocity-compensated virtual Hub while driving on Right Trigger
+    // Shoot for Hub (Shoot on the Move): Aim at velocity-compensated virtual Hub while driving on
+    // Right Trigger
     controller
         .rightTrigger()
         .whileTrue(
             Commands.parallel(
-                DriveCommands.shootOnTheMove(
+                DriveCommands.shootForHub(
                     drive, () -> controller.getLeftY(), () -> controller.getLeftX()),
-                SuperStructure.shootOnTheMove(drive, shooter, intake, serializer)));
-
-    // Reset gyro to 0° when B button is pressed
-    controller
-        .back()
-        .onTrue(
-            Commands.runOnce(
-                    () ->
-                        drive.setPose(
-                            new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
-                    drive)
-                .ignoringDisable(true));
+                SuperStructure.shootForHub(drive, shooter, intake, serializer)));
 
     // Reset full drivetrain pose to (0, 0, 0°) when Back button is pressed or via SmartDashboard
     // button
