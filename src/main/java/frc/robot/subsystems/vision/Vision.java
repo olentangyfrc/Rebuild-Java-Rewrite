@@ -7,6 +7,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.FieldObject2d;
@@ -23,13 +24,18 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Vision subsystem that manages Limelight vision cameras, feeds MegaTag1 vision measurements to the
- * drivetrain pose estimator, and displays each camera's pose on a single Field2d dashboard widget.
+ * Vision subsystem that manages Limelight cameras, processes MegaTag1 measurements in WPILib Blue
+ * Alliance coordinates (wpiBlue), feeds pose measurements to the drivetrain pose estimator, and
+ * displays visual layers on Field2d.
  */
 public class Vision extends SubsystemBase {
+  public static final double FIELD_LENGTH_METERS = 16.541748;
+  public static final double FIELD_WIDTH_METERS = 8.0137;
+
   private final Drive drivetrain;
   private final List<String> cameraNames;
 
+  // Trackers for MegaTag1 (always wpiBlue)
   private final Map<String, Pose2d> mt1Poses = new HashMap<>();
   private final Map<String, List<PoseEstimate>> mt1MeasurementTracker = new HashMap<>();
 
@@ -39,7 +45,6 @@ public class Vision extends SubsystemBase {
 
   private final SendableChooser<String> disableChooser = new SendableChooser<>();
 
-  private boolean sendYawRate = true;
   private double timeDelay = 0.5; // Seconds window to keep measurements
   private int maxFrameCount = 50;
   private int rewindCaptureCounter = 0;
@@ -57,7 +62,6 @@ public class Vision extends SubsystemBase {
     for (String name : this.cameraNames) {
       mt1MeasurementTracker.put(name, new ArrayList<>());
       mt1Poses.put(name, new Pose2d());
-      // Register each camera as an individual layer on the field
       cameraFieldObjects.put(name, visionField.getObject(name));
     }
 
@@ -84,18 +88,8 @@ public class Vision extends SubsystemBase {
     SmartDashboard.putData("Vision Field", visionField);
   }
 
-  /** Configures IMU modes and initial orientation for all Limelights. */
   public void setup() {
-    double yawDegrees = drivetrain.getRotation().getDegrees();
-    double yawRateDegreesPerSec =
-        sendYawRate
-            ? Units.radiansToDegrees(drivetrain.getChassisSpeeds().omegaRadiansPerSecond)
-            : 0.0;
-
-    for (String name : cameraNames) {
-      LimelightHelpers.SetRobotOrientation(name, yawDegrees, yawRateDegreesPerSec, 0, 0, 0, 0);
-      LimelightHelpers.SetIMUMode(name, 0); // 0 = external gyro
-    }
+    // Standard MegaTag1 setup
   }
 
   public void slowDownProcessing() {
@@ -129,50 +123,50 @@ public class Vision extends SubsystemBase {
     captureRewind(165.0);
   }
 
-  public void setSendYawRate(boolean sendYawRate) {
-    this.sendYawRate = sendYawRate;
+  /** Flips a pose 180 degrees across the field center (used when on Red Alliance). */
+  public static Pose2d flipFieldPose(Pose2d pose) {
+    return new Pose2d(
+        FIELD_LENGTH_METERS - pose.getX(),
+        FIELD_WIDTH_METERS - pose.getY(),
+        pose.getRotation().plus(Rotation2d.kPi));
   }
 
   @Override
   public void periodic() {
-    double yawDegrees = drivetrain.getRotation().getDegrees();
-    double yawRateDegreesPerSec =
-        sendYawRate
-            ? Units.radiansToDegrees(drivetrain.getChassisSpeeds().omegaRadiansPerSecond)
-            : 0.0;
-
     String disabledSelection = disableChooser.getSelected();
     List<Pose2d> validPosesThisCycle = new ArrayList<>();
+    boolean isRedAlliance =
+        DriverStation.getAlliance().isPresent()
+            && DriverStation.getAlliance().get() == DriverStation.Alliance.Red;
 
     for (String cameraName : cameraNames) {
       if ("all".equals(disabledSelection) || cameraName.equals(disabledSelection)) {
         continue;
       }
 
-      LimelightHelpers.SetRobotOrientation(
-          cameraName, yawDegrees, yawRateDegreesPerSec, 0, 0, 0, 0);
-
+      // Retrieve estimates in WPILib Blue Alliance coordinates (botpose_wpiblue)
       PoseEstimate mt1Estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(cameraName);
 
+      // Process MegaTag1 Estimate
       if (LimelightHelpers.validPoseEstimate(mt1Estimate)) {
+        Pose2d poseToAdd = isRedAlliance ? flipFieldPose(mt1Estimate.pose) : mt1Estimate.pose;
         Matrix<N3, N1> stdDevs = calculateStdDevs(mt1Estimate);
-        drivetrain.addVisionMeasurement(mt1Estimate.pose, mt1Estimate.timestampSeconds, stdDevs);
+        drivetrain.addVisionMeasurement(poseToAdd, mt1Estimate.timestampSeconds, stdDevs);
 
-        mt1Poses.put(cameraName, mt1Estimate.pose);
+        mt1Poses.put(cameraName, poseToAdd);
         mt1MeasurementTracker.get(cameraName).add(mt1Estimate);
-        validPosesThisCycle.add(mt1Estimate.pose);
+        validPosesThisCycle.add(poseToAdd);
 
-        // Update the specific camera trajectory/pose layer on the field
         FieldObject2d cameraObj = cameraFieldObjects.get(cameraName);
         if (cameraObj != null) {
-          cameraObj.setPose(mt1Estimate.pose);
+          cameraObj.setPose(poseToAdd);
         }
       }
 
       cleanTracker(mt1MeasurementTracker.get(cameraName));
     }
 
-    // Main robot indicator: average vision pose or drivetrain fall-back
+    // Update main robot pose on Field2d widget
     if (!validPosesThisCycle.isEmpty()) {
       Pose2d avgPose = getAveragePose(validPosesThisCycle);
       visionField.setRobotPose(avgPose);
@@ -198,6 +192,7 @@ public class Vision extends SubsystemBase {
   }
 
   private void cleanTracker(List<PoseEstimate> tracker) {
+    if (tracker == null) return;
     double now = Timer.getFPGATimestamp();
     tracker.removeIf(m -> (now - m.timestampSeconds) > timeDelay);
 
