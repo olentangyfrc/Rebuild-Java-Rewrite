@@ -1,5 +1,6 @@
 package frc.robot.commands;
 
+import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.networktables.BooleanEntry;
 import edu.wpi.first.networktables.DoubleEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -107,27 +108,49 @@ public class SuperStructure {
         serializer);
   }
 
-  public Command shoot() {
-    return shoot(drive, shooter, intake, serializer);
-  }
-
   public static Command intakeSTART(Intake intake) {
-    return Commands.runEnd(
+    return Commands.runOnce(
         () -> {
           intake.start();
           intake.setPivotSetPoint(0);
         },
-        () -> intake.stop(),
         intake);
   }
 
-  public static Command intakeWithDrive(Intake intake, double downwardVoltage) {
-    return Commands.runEnd(
-        () -> intake.driveIntakeDown(downwardVoltage), () -> intake.resetIntake(), intake);
+  // Instance command helpers
+  public Command shoot() {
+    return shoot(drive, shooter, intake, serializer);
   }
 
-  // HELPER MEATHOD DONT GET RID OF ME
-  public Command intakeWithDrive(double downwardVoltage) {
-    return intakeWithDrive(intake, downwardVoltage);
+  public Command shootOnTheMove() {
+    return shootOnTheMove(drive, shooter, intake, serializer);
+  }
+
+  public Command stopAll() {
+    return stopAll(shooter, intake, serializer);
+  }
+
+  public Command intakeSTART() {
+    return intakeSTART(intake);
+  }
+
+  public Command intake() {
+    return intakeSTART(intake);
+  }
+
+  /** Registers PathPlanner named commands for SuperStructure actions. */
+  public static void registerNamedCommands(
+      Drive drive, Shooter shooter, Intake intake, Serializer serializer) {
+    NamedCommands.registerCommand(
+        "shoot", shoot(drive, shooter, intake, serializer).withTimeout(2.0));
+    NamedCommands.registerCommand(
+        "shootOnTheMove", shootOnTheMove(drive, shooter, intake, serializer).withTimeout(2.0));
+    NamedCommands.registerCommand("intake", intakeSTART(intake));
+    NamedCommands.registerCommand("stopAll", stopAll(shooter, intake, serializer));
+  }
+
+  /** Registers PathPlanner named commands using this SuperStructure instance. */
+  public void registerNamedCommands() {
+    registerNamedCommands(drive, shooter, intake, serializer);
   }
 }

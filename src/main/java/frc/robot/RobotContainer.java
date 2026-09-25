@@ -12,6 +12,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -127,6 +128,9 @@ public class RobotContainer {
     serializer.init();
     intake.init();
 
+    // Register PathPlanner named commands for SuperStructure
+    SuperStructure.registerNamedCommands(drive, shooter, intake, serializer);
+
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
@@ -212,7 +216,7 @@ public class RobotContainer {
 
     // Reset gyro to 0° when B button is pressed
     controller
-        .b()
+        .back()
         .onTrue(
             Commands.runOnce(
                     () ->
@@ -220,6 +224,11 @@ public class RobotContainer {
                             new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
                     drive)
                 .ignoringDisable(true));
+
+    // Reset full drivetrain pose to (0, 0, 0°) when Back button is pressed or via SmartDashboard
+    // button
+    controller.back().onTrue(DriveCommands.resetPoseToZero(drive));
+    SmartDashboard.putData("Reset Pose (0,0)", DriveCommands.resetPoseToZero(drive));
   }
 
   /**

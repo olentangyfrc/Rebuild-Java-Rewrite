@@ -63,7 +63,13 @@ public class TunerConstants {
                   .withStatorCurrentLimitEnable(true));
 
   private static final CANcoderConfiguration encoderInitialConfigs = new CANcoderConfiguration();
-  private static final Pigeon2Configuration pigeonConfigs = null;
+  private static final Pigeon2Configuration pigeonConfigs =
+      new Pigeon2Configuration()
+          .withMountPose(
+              new MountPoseConfigs()
+                  .withMountPoseYaw(177.911865234375)
+                  .withMountPosePitch(-0.943336009979248)
+                  .withMountPoseRoll(5.924501419067383));
 
   // Ported from Python canbus
   public static final CANBus kCANBus = new CANBus("*", "./logs/example.hoot");

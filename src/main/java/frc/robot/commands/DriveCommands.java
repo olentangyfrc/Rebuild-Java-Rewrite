@@ -7,6 +7,8 @@
 
 package frc.robot.commands;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -233,7 +235,9 @@ public class DriveCommands {
    * drive the robot to a target Pose2d.
    */
   public static Command driveToPose(Drive drive, Supplier<Pose2d> poseSupplier) {
+    @SuppressWarnings("resource")
     PIDController xController = new PIDController(5.0, 0.0, 0.0);
+    @SuppressWarnings("resource")
     PIDController yController = new PIDController(5.0, 0.0, 0.0);
     ProfiledPIDController angleController =
         new ProfiledPIDController(
@@ -294,5 +298,55 @@ public class DriveCommands {
   /** Stops the drive and locks swerve modules in an X arrangement to resist movement. */
   public static Command lock(Drive drive) {
     return Commands.run(drive::stopWithX, drive);
+  }
+
+  /**
+   * Follows a Choreo trajectory loaded by name using PathPlanner's AutoBuilder.
+   *
+   * @param drive the drive subsystem
+   * @param trajectoryName the name of the Choreo trajectory file (without extension)
+   * @return a command that follows the Choreo trajectory
+   */
+  public static Command followChoreoPath(Drive drive, String trajectoryName) {
+    try {
+      PathPlannerPath path = PathPlannerPath.fromChoreoTrajectory(trajectoryName);
+      return AutoBuilder.followPath(path);
+    } catch (Exception e) {
+      DriverStation.reportError(
+          "Failed to load Choreo trajectory: " + trajectoryName + " - " + e.getMessage(),
+          e.getStackTrace());
+      return Commands.none();
+    }
+  }
+
+  /**
+   * Follows a split Choreo trajectory loaded by name and split index using PathPlanner's
+   * AutoBuilder.
+   *
+   * @param drive the drive subsystem
+   * @param trajectoryName the name of the Choreo trajectory file (without extension)
+   * @param splitIndex the index of the split section of the trajectory
+   * @return a command that follows the split Choreo trajectory
+   */
+  public static Command followChoreoPath(Drive drive, String trajectoryName, int splitIndex) {
+    try {
+      PathPlannerPath path = PathPlannerPath.fromChoreoTrajectory(trajectoryName, splitIndex);
+      return AutoBuilder.followPath(path);
+    } catch (Exception e) {
+      DriverStation.reportError(
+          "Failed to load Choreo trajectory: "
+              + trajectoryName
+              + " (split "
+              + splitIndex
+              + ") - "
+              + e.getMessage(),
+          e.getStackTrace());
+      return Commands.none();
+    }
+  }
+
+  /** Resets the robot pose to (0, 0, 0°). */
+  public static Command resetPoseToZero(Drive drive) {
+    return Commands.runOnce(() -> drive.setPose(Pose2d.kZero), drive).ignoringDisable(true);
   }
 }

@@ -166,15 +166,6 @@ public class Intake extends SubsystemBase {
     pivotMotor.setControl(new com.ctre.phoenix6.controls.VoltageOut(totalVoltage));
   }
 
-  /**
-   * Static command to drive the intake down with rollers running and a constant downward voltage.
-   */
-  public static edu.wpi.first.wpilibj2.command.Command driveIntakeDown(
-      Intake intake, double voltage) {
-    return edu.wpi.first.wpilibj2.command.Commands.runEnd(
-        () -> intake.driveIntakeDown(voltage), () -> intake.resetIntake(), intake);
-  }
-
   // tell velocity in RPS
   public void setIntakeRollersCustom(double velocity) {
     leaderMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(velocity));
