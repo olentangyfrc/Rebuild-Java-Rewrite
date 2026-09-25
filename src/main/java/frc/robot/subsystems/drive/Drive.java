@@ -100,6 +100,15 @@ public class Drive extends SubsystemBase {
   private Transform2d poseOffset = new Transform2d(); // defaults to zero offset
   private final Field2d field = new Field2d();
 
+  private ChassisSpeeds targetChassisSpeeds = new ChassisSpeeds();
+  private SwerveModuleState[] targetModuleStates =
+      new SwerveModuleState[] {
+        new SwerveModuleState(),
+        new SwerveModuleState(),
+        new SwerveModuleState(),
+        new SwerveModuleState()
+      };
+
   public Drive(
       GyroIO gyroIO,
       ModuleIO flModuleIO,
@@ -165,6 +174,34 @@ public class Drive extends SubsystemBase {
     Logger.recordOutput("Drive/RotationToHub", getRotationToHub());
     SmartDashboard.putNumber("Drive/DistanceFromPass", getDistanceFromPass());
     SmartDashboard.putNumber("Drive/DistanceFromHub", getDistanceFromHub());
+
+    double targetLinearVelocity = getTargetLinearVelocity();
+    double estimatedGroundSpeed = getEstimatedGroundSpeed();
+
+    Logger.recordOutput("Drive/TargetLinearVelocity", targetLinearVelocity);
+    Logger.recordOutput("Drive/TargetChassisSpeeds", targetChassisSpeeds);
+    Logger.recordOutput("Drive/EstimatedGroundSpeed", estimatedGroundSpeed);
+
+    SmartDashboard.putNumber("Drive/TargetVelocity", targetLinearVelocity);
+    SmartDashboard.putNumber("Drive/TargetLinearVelocity", targetLinearVelocity);
+    SmartDashboard.putNumber("Drive/EstimatedGroundSpeed", estimatedGroundSpeed);
+    SmartDashboard.putNumber("Drive/GroundSpeedMetersPerSec", estimatedGroundSpeed);
+
+    double[] targetStatesArray = new double[8];
+    for (int i = 0; i < 4; i++) {
+      targetStatesArray[i * 2] = targetModuleStates[i].angle.getDegrees();
+      targetStatesArray[i * 2 + 1] = targetModuleStates[i].speedMetersPerSecond;
+    }
+    SmartDashboard.putNumberArray("SwerveStates/Setpoints", targetStatesArray);
+
+    double[] measuredStatesArray = new double[8];
+    SwerveModuleState[] measuredStates = getModuleStates();
+    for (int i = 0; i < 4; i++) {
+      measuredStatesArray[i * 2] = measuredStates[i].angle.getDegrees();
+      measuredStatesArray[i * 2 + 1] = measuredStates[i].speedMetersPerSecond;
+    }
+    SmartDashboard.putNumberArray("SwerveStates/Measured", measuredStatesArray);
+
     odometryLock.lock(); // Prevents odometry updates while reading data
     gyroIO.updateInputs(gyroInputs);
     Logger.processInputs("Drive/Gyro", gyroInputs);
@@ -178,6 +215,14 @@ public class Drive extends SubsystemBase {
       for (var module : modules) {
         module.stop();
       }
+      targetChassisSpeeds = new ChassisSpeeds();
+      targetModuleStates =
+          new SwerveModuleState[] {
+            new SwerveModuleState(),
+            new SwerveModuleState(),
+            new SwerveModuleState(),
+            new SwerveModuleState()
+          };
     }
 
     // Log empty setpoint states when disabled
@@ -240,6 +285,9 @@ public class Drive extends SubsystemBase {
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
     SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, TunerConstants.kSpeedAt12Volts);
+
+    targetChassisSpeeds = discreteSpeeds;
+    targetModuleStates = setpointStates;
 
     // Log unoptimized setpoints and setpoint speeds
     Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
@@ -358,7 +406,7 @@ public class Drive extends SubsystemBase {
   }
 
   public double getDistanceFromPass() {
-    return (getPose().getTranslation().getDistance(getPassPosition()) + 2);
+    return frc.robot.subsystems.shooter.ShooterUtil.getPassDistance(getPose());
   }
 
   /**
@@ -397,12 +445,8 @@ public class Drive extends SubsystemBase {
     return hubPosition.minus(currentTranslation).getAngle().plus(new Rotation2d(Math.PI));
   }
 
-    public Rotation2d getRotationToPassFinal() {
-    Pose2d robotPose = getPose();
-    Pose2d passPosition = new Pose2d(robotPose.getX() + 2, robotPose.getY(), Rotation2d.fromDegrees(0));
-    Translation2d passPositionTranslation = passPosition.getTranslation();
-    Translation2d currentTranslation = getPose().getTranslation();
-    return passPositionTranslation.minus(currentTranslation).getAngle().plus(new Rotation2d(Math.PI));
+  public Rotation2d getRotationToPassFinal() {
+    return frc.robot.subsystems.shooter.ShooterUtil.getPassAngle(getPose());
   }
 
   /**
@@ -448,11 +492,11 @@ public class Drive extends SubsystemBase {
   public Rotation2d getShootForHubRotation() {
     return getRotationToHub(getVirtualHubPosition());
   }
+
   @AutoLogOutput(key = "Drive/PassRotation")
   public Rotation2d getPassRotation() {
     return getRotationToPassFinal();
   }
-
 
   /** Legacy getter for shoot on the move rotation. */
   public Rotation2d getShootOnTheMoveRotation() {
@@ -512,6 +556,30 @@ public class Drive extends SubsystemBase {
   /** Returns the maximum angular speed in radians per sec. */
   public double getMaxAngularSpeedRadPerSec() {
     return getMaxLinearSpeedMetersPerSec() / DRIVE_BASE_RADIUS;
+  }
+
+  /** Returns the measured estimated ground speed of the robot in meters per second. */
+  @AutoLogOutput(key = "Drive/EstimatedGroundSpeed")
+  public double getEstimatedGroundSpeed() {
+    ChassisSpeeds speeds = getChassisSpeeds();
+    return Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
+  }
+
+  /** Returns the target linear velocity of the drivetrain in meters per second. */
+  @AutoLogOutput(key = "Drive/TargetLinearVelocity")
+  public double getTargetLinearVelocity() {
+    return Math.hypot(targetChassisSpeeds.vxMetersPerSecond, targetChassisSpeeds.vyMetersPerSecond);
+  }
+
+  /** Returns the target chassis speeds of the drivetrain. */
+  @AutoLogOutput(key = "Drive/TargetChassisSpeeds")
+  public ChassisSpeeds getTargetChassisSpeeds() {
+    return targetChassisSpeeds;
+  }
+
+  /** Returns the target module states of the drivetrain. */
+  public SwerveModuleState[] getTargetModuleStates() {
+    return targetModuleStates;
   }
 
   /** Returns an array of module translations. */

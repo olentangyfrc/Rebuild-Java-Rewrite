@@ -7,8 +7,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.FieldObject2d;
@@ -144,7 +142,6 @@ public class Vision extends SubsystemBase {
             : 0.0;
 
     String disabledSelection = disableChooser.getSelected();
-    boolean isRedAlliance = DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red;
     List<Pose2d> validPosesThisCycle = new ArrayList<>();
 
     for (String cameraName : cameraNames) {
@@ -155,10 +152,7 @@ public class Vision extends SubsystemBase {
       LimelightHelpers.SetRobotOrientation(
           cameraName, yawDegrees, yawRateDegreesPerSec, 0, 0, 0, 0);
 
-      PoseEstimate mt1Estimate =
-          isRedAlliance
-              ? LimelightHelpers.getBotPoseEstimate_wpiRed(cameraName)
-              : LimelightHelpers.getBotPoseEstimate_wpiBlue(cameraName);
+      PoseEstimate mt1Estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(cameraName);
 
       if (LimelightHelpers.validPoseEstimate(mt1Estimate)) {
         Matrix<N3, N1> stdDevs = calculateStdDevs(mt1Estimate);

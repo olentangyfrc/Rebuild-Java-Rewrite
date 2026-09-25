@@ -10,7 +10,6 @@ package frc.robot;
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -146,8 +145,8 @@ public class RobotContainer {
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
-            () -> controller.getLeftY(),
-            () -> controller.getLeftX(),
+            () -> -controller.getLeftY(),
+            () -> -controller.getLeftX(),
             () -> -controller.getRightX()));
 
     // Emergency stop all superstructure subsystems on Left Bumper
@@ -163,7 +162,7 @@ public class RobotContainer {
         .whileTrue(
             Commands.parallel(
                 DriveCommands.snakeDrive(
-                    drive, () -> controller.getLeftY(), () -> controller.getLeftX()),
+                    drive, () -> -controller.getLeftY(), () -> -controller.getLeftX()),
                 SuperStructure.intakeStart(intake)));
 
     // Shoot for Hub (Shoot on the Move): Aim at velocity-compensated virtual Hub while driving on
@@ -173,13 +172,14 @@ public class RobotContainer {
         .whileTrue(
             Commands.parallel(
                 DriveCommands.shootForHub(
-                    drive, () -> controller.getLeftY(), () -> controller.getLeftX()),
+                    drive, () -> -controller.getLeftY(), () -> -controller.getLeftX()),
                 SuperStructure.shootForHub(drive, shooter, intake, serializer)));
 
     // Reset full drivetrain pose to (0, 0, 0°) when Back button is pressed or via SmartDashboard
     // button
     controller.back().onTrue(DriveCommands.resetPoseToZero(drive));
-    SmartDashboard.putData("Reset Pose (0,0)", DriveCommands.resetPoseToZero(drive));
+    edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putData(
+        "Reset Pose (0,0)", DriveCommands.resetPoseToZero(drive));
   }
 
   /**

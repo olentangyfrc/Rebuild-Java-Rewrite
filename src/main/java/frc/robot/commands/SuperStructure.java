@@ -64,7 +64,8 @@ public class SuperStructure {
         intake,
         serializer);
   }
- public static Command pass(Drive drive, Shooter shooter, Intake intake, Serializer serializer) {
+
+  public static Command pass(Drive drive, Shooter shooter, Intake intake, Serializer serializer) {
     return Commands.run(
         () -> {
           boolean usePose = useDrivetrainPose.get();
@@ -88,7 +89,6 @@ public class SuperStructure {
         intake,
         serializer);
   }
-
 
   /** Deprecated alias for {@link #shootForHub(Drive, Shooter, Intake, Serializer)}. */
   @Deprecated
