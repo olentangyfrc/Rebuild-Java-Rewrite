@@ -78,7 +78,10 @@ public class SuperStructure {
     tab.addBoolean("Passing Active", shooter::isPassing).withPosition(5, 0).withSize(2, 1);
   }
 
-  /** Command to shoot for the hub using velocity-compensated distance. */
+  /**
+   * Command to shoot for the hub using velocity-compensated distance when drum, hood, AND
+   * drivetrain heading are aligned.
+   */
   public static Command shootForHub(
       Drive drive, Shooter shooter, Intake intake, Serializer serializer) {
     return Commands.run(
@@ -86,7 +89,7 @@ public class SuperStructure {
               boolean usePose = useDrivetrainPose.get();
               double distance = usePose ? drive.getShootForHubDistance() : distanceOverride.get();
               shooter.shootForHub(distance);
-              if (shooter.isDrumAtSpeed() && shooter.isHoodAtSetpoint()) {
+              if (shooter.isDrumAtSpeed() && shooter.isHoodAtSetpoint() && drive.isAlignedToHub()) {
                 shooter.startFeed();
                 serializer.start();
                 intake.startAgitationIntake();
@@ -108,7 +111,9 @@ public class SuperStructure {
               boolean usePose = useDrivetrainPose.get();
               double distance = usePose ? drive.getDistanceFromPass() : distanceOverride.get();
               shooter.pass(distance);
-              if (shooter.isDrumAtSpeed() && shooter.isHoodAtSetpoint()) {
+              if (shooter.isDrumAtSpeed()
+                  && shooter.isHoodAtSetpoint()
+                  && drive.isAlignedToPass()) {
                 shooter.startfeed();
                 serializer.start();
                 intake.startagitationIntake();

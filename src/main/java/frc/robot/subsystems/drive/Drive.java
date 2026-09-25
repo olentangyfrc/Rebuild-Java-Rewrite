@@ -502,6 +502,28 @@ public class Drive extends SubsystemBase {
     return getShootForHubRotation();
   }
 
+  /** Checks if the robot heading is aligned to the virtual Hub within a tolerance (in degrees). */
+  @AutoLogOutput(key = "Drive/IsAlignedToHub")
+  public boolean isAlignedToHub(double toleranceDegrees) {
+    double errorRad = Math.abs(getRotation().minus(getShootForHubRotation()).getRadians());
+    return errorRad < Math.toRadians(toleranceDegrees);
+  }
+
+  public boolean isAlignedToHub() {
+    return isAlignedToHub(3.0);
+  }
+
+  /** Checks if the robot heading is aligned to the Pass target within a tolerance (in degrees). */
+  @AutoLogOutput(key = "Drive/IsAlignedToPass")
+  public boolean isAlignedToPass(double toleranceDegrees) {
+    double errorRad = Math.abs(getRotation().minus(getPassRotation()).getRadians());
+    return errorRad < Math.toRadians(toleranceDegrees);
+  }
+
+  public boolean isAlignedToPass() {
+    return isAlignedToPass(3.0);
+  }
+
   /** Resets the current odometry pose. */
   public void setPose(Pose2d pose) {
     poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);
