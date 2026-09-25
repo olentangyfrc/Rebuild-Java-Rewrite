@@ -1,5 +1,8 @@
 package frc.robot.subsystems.shooter;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 
 public class ShooterUtil {
@@ -13,6 +16,8 @@ public class ShooterUtil {
   private static final InterpolatingDoubleTreeMap angleMap = new InterpolatingDoubleTreeMap();
   private static final InterpolatingDoubleTreeMap rpmMap = new InterpolatingDoubleTreeMap();
 
+  private static final InterpolatingDoubleTreeMap angleMapPass = new InterpolatingDoubleTreeMap();
+  private static final InterpolatingDoubleTreeMap rpmMapPass = new InterpolatingDoubleTreeMap();
   static {
     // High-ceiling table points: { distance (m), angle (deg), rpm }
     double[][] highCeilingData = {
@@ -45,12 +50,127 @@ public class ShooterUtil {
       rpmMap.put(distanceMeters, rpm);
     }
   }
+  static {
+    // High-ceiling table points: { distance (m), angle (deg), rpm }
+    double[][] highCeilingData = {
+      {1.44 + CHASE_FUDGE_FACTOR, 2.04, 1210 + NEW_INDEXER_FUDGE_FACTOR},
+      {1.64 + CHASE_FUDGE_FACTOR, 5, 1246 + NEW_INDEXER_FUDGE_FACTOR},
+      {1.84 + CHASE_FUDGE_FACTOR, 5,1316 + NEW_INDEXER_FUDGE_FACTOR},
+      {2.04 + CHASE_FUDGE_FACTOR, 5, 1348 + NEW_INDEXER_FUDGE_FACTOR},
+      {2.24 + CHASE_FUDGE_FACTOR, 5.08, 1374 + NEW_INDEXER_FUDGE_FACTOR},
+      {2.44 + CHASE_FUDGE_FACTOR, 5.82, 1411 + NEW_INDEXER_FUDGE_FACTOR},
+      {2.64 + CHASE_FUDGE_FACTOR, 6.8, 1448 + NEW_INDEXER_FUDGE_FACTOR},
+      {2.84 + CHASE_FUDGE_FACTOR, 10.15, 1495 + NEW_INDEXER_FUDGE_FACTOR},
+      {3.04 + CHASE_FUDGE_FACTOR, 9.41, 1478 + NEW_INDEXER_FUDGE_FACTOR},
+      {3.24 + CHASE_FUDGE_FACTOR, 11.4, 1482 + NEW_INDEXER_FUDGE_FACTOR},
+      {3.44 + CHASE_FUDGE_FACTOR, 14.05, 1495 + NEW_INDEXER_FUDGE_FACTOR},
+      {3.64 + CHASE_FUDGE_FACTOR, 15.93, 1504 + NEW_INDEXER_FUDGE_FACTOR},
+      {3.84 + CHASE_FUDGE_FACTOR, 16, 1549 + NEW_INDEXER_FUDGE_FACTOR},
+      {4.04 + CHASE_FUDGE_FACTOR, 17.06, 1567 + NEW_INDEXER_FUDGE_FACTOR},
+      {4.24 + CHASE_FUDGE_FACTOR, 18.66, 1574 + NEW_INDEXER_FUDGE_FACTOR},
+      {4.44 + CHASE_FUDGE_FACTOR, 20.13, 1588 + NEW_INDEXER_FUDGE_FACTOR},
+      {4.64 + CHASE_FUDGE_FACTOR, 20.93, 1608 + NEW_INDEXER_FUDGE_FACTOR},
+      {4.84 + CHASE_FUDGE_FACTOR, 22.21, 1628 + NEW_INDEXER_FUDGE_FACTOR},
+      {5.04 + CHASE_FUDGE_FACTOR, 23.15, 1660 + NEW_INDEXER_FUDGE_FACTOR},
+      {5.24 + CHASE_FUDGE_FACTOR, 23.5, 1710 + NEW_INDEXER_FUDGE_FACTOR},
+      {5.44 + CHASE_FUDGE_FACTOR, 23.93, 1724 + NEW_INDEXER_FUDGE_FACTOR},
+    };
+
+    for (double[] point : highCeilingData) {
+      double distanceMeters = point[0];
+      double angleRadians = Math.toRadians(point[1]);
+      double rpm = point[2];
+
+      angleMapPass.put(distanceMeters, angleRadians);
+      rpmMapPass.put(distanceMeters, rpm);
+    }
+  }
 
   private ShooterUtil() {}
+  public static double getAngleBetweenPoses(Pose2d botPose2d, Pose2d targetPose2d){
+    double y_diff = targetPose2d.getY() - botPose2d.getY();
+    double x_diff = targetPose2d.getX() - botPose2d.getX();
+    return Math.atan2(y_diff, x_diff);
+  }
+  public static Rotation2d getPassAngle(Pose2d pose){
+    double fieldWidth = 8.0137;
+    if(pose.getX() < 11.2){
+      if (pose.getY() < 3.45){
+      Rotation2d result = new Rotation2d(getAngleBetweenPoses(pose, new Pose2d(2.00, 1.00, new Rotation2d(0)))+Math.PI);
+      return result;
+    }
+      else if (pose.getY() > 4.65){
+      Rotation2d result = new Rotation2d(getAngleBetweenPoses(pose, new Pose2d(2.00, fieldWidth - 1, new Rotation2d(0)))+Math.PI);
+      return result;
+    }
+    else if (pose.getY() < 4){
+      Rotation2d result = new Rotation2d(getAngleBetweenPoses(pose, new Pose2d(3.2, 1.4, new Rotation2d(0)))+Math.PI);
+      return result;      
+    }
+    else {
+      Rotation2d result = new Rotation2d(getAngleBetweenPoses(pose, new Pose2d(3.2, 6.5, new Rotation2d(0)))+Math.PI);
+      return result;      
+    }
+    }
+    else{
+      if (pose.getY() < 3.45){
+      Rotation2d result = new Rotation2d(getAngleBetweenPoses(pose, new Pose2d(5.67, 2.5, new Rotation2d(0)))+Math.PI);
+      return result;
+    }
+    else if (pose.getY() > 4.65){
+      Rotation2d result = new Rotation2d(getAngleBetweenPoses(pose, new Pose2d(5.67, fieldWidth-2.5, new Rotation2d(0)))+Math.PI);
+      return result;      
+    }
+    else if (pose.getY() < 4){
+      Rotation2d result = new Rotation2d(getAngleBetweenPoses(pose, new Pose2d(10, 1.4, new Rotation2d(0)))+Math.PI);
+      return result;      
+    }
+    else {
+      Rotation2d result = new Rotation2d(getAngleBetweenPoses(pose, new Pose2d(10, 6.5, new Rotation2d(0)))+Math.PI);
+      return result;      
+    }
+    }
+  }
+  public static double getPassDistance(Pose2d pose){
+    double fieldWidth = 8.0137;
+    if (pose.getX() < 11.2){
+      if (pose.getY() < 3.45){
+      return pose.getTranslation().getDistance(new Translation2d(2, 1));
+    }
+    else if (pose.getY() > 4.65){
+      return pose.getTranslation().getDistance(new Translation2d(2, 1));
+    }
+    else if (pose.getY() < 4){
+      return pose.getTranslation().getDistance(new Translation2d(3.2, 1.4));
+    }
+    else{
+      return pose.getTranslation().getDistance(new Translation2d(3.2, 6.5));
+    }
+    }
+    else{
+      if (pose.getY() < 3.45){
+        return pose.getTranslation().getDistance(new Translation2d(5.67, 2.5));
+      }
+      else if (pose.getY() > 4.65){
+        return pose.getTranslation().getDistance(new Translation2d(5.67, fieldWidth - 2.5));
+      }
+      else if (pose.getY() < 4){
+        return pose.getTranslation().getDistance(new Translation2d(10, 1.4));
+      }
+      else {
+        return pose.getTranslation().getDistance(new Translation2d(10, 6.5));
+      }
+    }
+  }
 
   public static ShooterParameters getInterpolatedValues(double distanceMeters) {
     double angle = angleMap.get(distanceMeters);
     double rpm = Math.floor(rpmMap.get(distanceMeters));
+    return new ShooterParameters(angle, rpm);
+  }
+  public static ShooterParameters getInterpolatedValuesPass(double distanceMeters) {
+    double angle = angleMapPass.get(distanceMeters);
+    double rpm = Math.floor(rpmMapPass.get(distanceMeters));
     return new ShooterParameters(angle, rpm);
   }
 

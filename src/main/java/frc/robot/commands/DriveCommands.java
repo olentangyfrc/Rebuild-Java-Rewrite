@@ -225,6 +225,49 @@ public class DriveCommands {
       Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
     return shootForHub(drive, xSupplier, ySupplier);
   }
+public static Command passOnTheMove(
+      Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
+    ProfiledPIDController angleController =
+        new ProfiledPIDController(
+            ANGLE_KP,
+            0.0,
+            ANGLE_KD,
+            new TrapezoidProfile.Constraints(ANGLE_MAX_VELOCITY, ANGLE_MAX_ACCELERATION));
+    angleController.enableContinuousInput(-Math.PI, Math.PI);
+
+    return Commands.run(
+            () -> {
+              double x = xSupplier.getAsDouble();
+              double y = ySupplier.getAsDouble();
+              Translation2d linearVelocity = getLinearVelocityFromJoysticks(x, y);
+
+              if (linearVelocity.getNorm() <= 0.0) {
+                drive.stopWithX();
+              } else {
+                double omega =
+                    angleController.calculate(
+                        drive.getRotation().getRadians(),
+                        drive.getPassRotation().getRadians());
+
+                ChassisSpeeds speeds =
+                    new ChassisSpeeds(
+                        linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec(),
+                        linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec(),
+                        omega);
+                boolean isFlipped =
+                    DriverStation.getAlliance().isPresent()
+                        && DriverStation.getAlliance().get() == Alliance.Red;
+                drive.runVelocity(
+                    ChassisSpeeds.fromFieldRelativeSpeeds(
+                        speeds,
+                        isFlipped
+                            ? drive.getRotation().plus(new Rotation2d(Math.PI))
+                            : drive.getRotation()));
+              }
+            },
+            drive)
+        .beforeStarting(() -> angleController.reset(drive.getRotation().getRadians()));
+  }
 
   /**
    * Field-relative drive command using PID controllers for X position, Y position, and Rotation to
