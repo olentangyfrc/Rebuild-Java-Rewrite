@@ -175,9 +175,19 @@ public class RobotContainer {
                     drive, () -> -controller.getLeftY(), () -> -controller.getLeftX()),
                 SuperStructure.shootForHub(drive, shooter, intake, serializer)));
 
-    // Reset full drivetrain pose to (0, 0, 0°) when Back button is pressed or via SmartDashboard
-    // button
-    controller.back().onTrue(DriveCommands.resetPoseToZero(drive));
+    // Pass on the Move: Aim at pass target while driving on Left Trigger
+    controller
+        .leftTrigger()
+        .whileTrue(
+            Commands.parallel(
+                DriveCommands.passOnTheMove(
+                    drive, () -> -controller.getLeftY(), () -> -controller.getLeftX()),
+                SuperStructure.pass(drive, shooter, intake, serializer)));
+
+    // Zero gyro heading when Back button is pressed, and add dashboard controls
+    controller.back().onTrue(DriveCommands.zeroGyro(drive));
+    edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putData(
+        "Zero Gyro", DriveCommands.zeroGyro(drive));
     edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putData(
         "Reset Pose (0,0)", DriveCommands.resetPoseToZero(drive));
   }

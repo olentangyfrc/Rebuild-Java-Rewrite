@@ -315,6 +315,14 @@ public class DriveCommands {
     }
   }
 
+  /** Zeroes the gyro heading to 0° while preserving current translational pose. */
+  public static Command zeroGyro(Drive drive) {
+    return Commands.runOnce(
+            () -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)),
+            drive)
+        .ignoringDisable(true);
+  }
+
   /** Resets the robot pose to (0, 0, 0°). */
   public static Command resetPoseToZero(Drive drive) {
     return Commands.runOnce(() -> drive.setPose(Pose2d.kZero), drive).ignoringDisable(true);
