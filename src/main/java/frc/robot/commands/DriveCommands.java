@@ -7,6 +7,8 @@
 
 package frc.robot.commands;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -141,6 +143,23 @@ public class DriveCommands {
   }
 
   /**
+   * Field-relative drive command using joysticks for linear control and PID targeting to snap the
+   * drivetrain heading to a fixed target angle (e.g. 0°, 90°, 180°).
+   */
+  public static Command snapToAngle(
+      Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier, Rotation2d targetAngle) {
+    return joystickDriveAtAngle(drive, xSupplier, ySupplier, () -> targetAngle);
+  }
+
+  /**
+   * Overloaded snapToAngle command without joystick translation input (rotates in place to target
+   * angle).
+   */
+  public static Command snapToAngle(Drive drive, Rotation2d targetAngle) {
+    return snapToAngle(drive, () -> 0.0, () -> 0.0, targetAngle);
+  }
+
+  /**
    * Field relative drive command using joysticks for linear control and PID targeting to
    * continuously point/align the drivetrain heading toward the Hub.
    */
@@ -180,52 +199,31 @@ public class DriveCommands {
 
   /**
    * Field-relative drive command using joysticks for linear control and PID targeting to
-   * continuously point/align the drivetrain heading toward the velocity-compensated virtual Hub. If
-   * no translation joystick input is provided, locks the drivetrain in an X pattern to prevent
-   * pushing.
+   * continuously point/align the drivetrain heading toward the velocity-compensated virtual Hub.
+   * Works both on the move and while stationary.
    */
+  public static Command shootForHub(
+      Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
+    return joystickDriveAtAngle(drive, xSupplier, ySupplier, drive::getShootForHubRotation);
+  }
+
+  /**
+   * Overloaded shootForHub command without joystick translation input (points at virtual Hub in
+   * place).
+   */
+  public static Command shootForHub(Drive drive) {
+    return shootForHub(drive, () -> 0.0, () -> 0.0);
+  }
+
+  /**
+   * Field-relative drive command using joysticks to point at the virtual Hub.
+   *
+   * @deprecated Use {@link #shootForHub(Drive, DoubleSupplier, DoubleSupplier)} instead.
+   */
+  @Deprecated
   public static Command shootOnTheMove(
       Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
-    ProfiledPIDController angleController =
-        new ProfiledPIDController(
-            ANGLE_KP,
-            0.0,
-            ANGLE_KD,
-            new TrapezoidProfile.Constraints(ANGLE_MAX_VELOCITY, ANGLE_MAX_ACCELERATION));
-    angleController.enableContinuousInput(-Math.PI, Math.PI);
-
-    return Commands.run(
-            () -> {
-              double x = xSupplier.getAsDouble();
-              double y = ySupplier.getAsDouble();
-              Translation2d linearVelocity = getLinearVelocityFromJoysticks(x, y);
-
-              if (linearVelocity.getNorm() <= 0.0) {
-                drive.stopWithX();
-              } else {
-                double omega =
-                    angleController.calculate(
-                        drive.getRotation().getRadians(),
-                        drive.getShootOnTheMoveRotation().getRadians());
-
-                ChassisSpeeds speeds =
-                    new ChassisSpeeds(
-                        linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec(),
-                        linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec(),
-                        omega);
-                boolean isFlipped =
-                    DriverStation.getAlliance().isPresent()
-                        && DriverStation.getAlliance().get() == Alliance.Red;
-                drive.runVelocity(
-                    ChassisSpeeds.fromFieldRelativeSpeeds(
-                        speeds,
-                        isFlipped
-                            ? drive.getRotation().plus(new Rotation2d(Math.PI))
-                            : drive.getRotation()));
-              }
-            },
-            drive)
-        .beforeStarting(() -> angleController.reset(drive.getRotation().getRadians()));
+    return shootForHub(drive, xSupplier, ySupplier);
   }
 public static Command passOnTheMove(
       Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
@@ -276,7 +274,9 @@ public static Command passOnTheMove(
    * drive the robot to a target Pose2d.
    */
   public static Command driveToPose(Drive drive, Supplier<Pose2d> poseSupplier) {
+    @SuppressWarnings("resource")
     PIDController xController = new PIDController(5.0, 0.0, 0.0);
+    @SuppressWarnings("resource")
     PIDController yController = new PIDController(5.0, 0.0, 0.0);
     ProfiledPIDController angleController =
         new ProfiledPIDController(
@@ -337,5 +337,55 @@ public static Command passOnTheMove(
   /** Stops the drive and locks swerve modules in an X arrangement to resist movement. */
   public static Command lock(Drive drive) {
     return Commands.run(drive::stopWithX, drive);
+  }
+
+  /**
+   * Follows a Choreo trajectory loaded by name using PathPlanner's AutoBuilder.
+   *
+   * @param drive the drive subsystem
+   * @param trajectoryName the name of the Choreo trajectory file (without extension)
+   * @return a command that follows the Choreo trajectory
+   */
+  public static Command followChoreoPath(Drive drive, String trajectoryName) {
+    try {
+      PathPlannerPath path = PathPlannerPath.fromChoreoTrajectory(trajectoryName);
+      return AutoBuilder.followPath(path);
+    } catch (Exception e) {
+      DriverStation.reportError(
+          "Failed to load Choreo trajectory: " + trajectoryName + " - " + e.getMessage(),
+          e.getStackTrace());
+      return Commands.none();
+    }
+  }
+
+  /**
+   * Follows a split Choreo trajectory loaded by name and split index using PathPlanner's
+   * AutoBuilder.
+   *
+   * @param drive the drive subsystem
+   * @param trajectoryName the name of the Choreo trajectory file (without extension)
+   * @param splitIndex the index of the split section of the trajectory
+   * @return a command that follows the split Choreo trajectory
+   */
+  public static Command followChoreoPath(Drive drive, String trajectoryName, int splitIndex) {
+    try {
+      PathPlannerPath path = PathPlannerPath.fromChoreoTrajectory(trajectoryName, splitIndex);
+      return AutoBuilder.followPath(path);
+    } catch (Exception e) {
+      DriverStation.reportError(
+          "Failed to load Choreo trajectory: "
+              + trajectoryName
+              + " (split "
+              + splitIndex
+              + ") - "
+              + e.getMessage(),
+          e.getStackTrace());
+      return Commands.none();
+    }
+  }
+
+  /** Resets the robot pose to (0, 0, 0°). */
+  public static Command resetPoseToZero(Drive drive) {
+    return Commands.runOnce(() -> drive.setPose(Pose2d.kZero), drive).ignoringDisable(true);
   }
 }

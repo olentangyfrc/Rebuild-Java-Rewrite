@@ -1,5 +1,6 @@
 package frc.robot.commands;
 
+import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.networktables.BooleanEntry;
 import edu.wpi.first.networktables.DoubleEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -41,23 +42,20 @@ public class SuperStructure {
     this.serializer = serializer;
   }
 
-  /** Command to shoot for the hub using drivetrain pose or manual distance override. */
-  public static Command shoot(Drive drive, Shooter shooter, Intake intake, Serializer serializer) {
+  /** Command to shoot for the hub using velocity-compensated distance when moving. */
+  public static Command shootForHub(
+      Drive drive, Shooter shooter, Intake intake, Serializer serializer) {
     return Commands.run(
         () -> {
           boolean usePose = useDrivetrainPose.get();
-          double distance = usePose ? drive.getDistanceFromHub() : distanceOverride.get();
+          double distance = usePose ? drive.getShootForHubDistance() : distanceOverride.get();
           shooter.shootForHub(distance);
           if (shooter.isDrumAtSpeed() && shooter.isHoodAtSetpoint()) {
-
-            shooter.startfeed();
+            shooter.startFeed();
             serializer.start();
-
-            intake.startagitationIntake();
-            // intake.setPivotSetPoint(0);
-
+            intake.startAgitationIntake();
           } else {
-            shooter.waitforfeed();
+            shooter.waitForFeed();
             intake.resetIntake();
             serializer.stop();
           }
@@ -92,38 +90,19 @@ public class SuperStructure {
   }
 
 
-  /** Command to shoot on the move for the hub using velocity-compensated distance. */
+  /** Deprecated alias for {@link #shootForHub(Drive, Shooter, Intake, Serializer)}. */
+  @Deprecated
   public static Command shootOnTheMove(
       Drive drive, Shooter shooter, Intake intake, Serializer serializer) {
-    return Commands.run(
-        () -> {
-          boolean usePose = useDrivetrainPose.get();
-          double distance = usePose ? drive.getShootOnTheMoveDistance() : distanceOverride.get();
-          shooter.shootForHub(distance);
-          if (shooter.isDrumAtSpeed() && shooter.isHoodAtSetpoint()) {
-
-            shooter.startfeed();
-            serializer.start();
-
-            intake.startagitationIntake();
-
-          } else {
-            shooter.waitforfeed();
-            intake.resetIntake();
-            serializer.stop();
-          }
-        },
-        shooter,
-        intake,
-        serializer);
+    return shootForHub(drive, shooter, intake, serializer);
   }
 
   public static Command stopAll(Shooter shooter, Intake intake, Serializer serializer) {
-    return Commands.run(
+    return Commands.runOnce(
         () -> {
           shooter.stop();
           shooter.resetHood();
-          shooter.stopfeed();
+          shooter.stopFeed();
           intake.resetIntake();
           serializer.stop();
         },
@@ -132,16 +111,60 @@ public class SuperStructure {
         serializer);
   }
 
-  public Command shoot() {
-    return shoot(drive, shooter, intake, serializer);
-  }
-
-  public static Command intakeSTART(Intake intake) {
-    return Commands.run(
+  public static Command intakeStart(Intake intake) {
+    return Commands.runOnce(
         () -> {
           intake.start();
           intake.setPivotSetPoint(0);
         },
         intake);
+  }
+
+  @Deprecated
+  public static Command intakeSTART(Intake intake) {
+    return intakeStart(intake);
+  }
+
+  // Instance command helpers
+  public Command shootForHub() {
+    return shootForHub(drive, shooter, intake, serializer);
+  }
+
+  @Deprecated
+  public Command shootOnTheMove() {
+    return shootForHub();
+  }
+
+  public Command stopAll() {
+    return stopAll(shooter, intake, serializer);
+  }
+
+  public Command intakeStart() {
+    return intakeStart(intake);
+  }
+
+  @Deprecated
+  public Command intakeSTART() {
+    return intakeStart();
+  }
+
+  public Command intake() {
+    return intakeStart(intake);
+  }
+
+  /** Registers PathPlanner named commands for SuperStructure actions. */
+  public static void registerNamedCommands(
+      Drive drive, Shooter shooter, Intake intake, Serializer serializer) {
+    NamedCommands.registerCommand(
+        "shootForHub", shootForHub(drive, shooter, intake, serializer).withTimeout(2.0));
+    NamedCommands.registerCommand(
+        "shootOnTheMove", shootForHub(drive, shooter, intake, serializer).withTimeout(2.0));
+    NamedCommands.registerCommand("intake", intakeStart(intake));
+    NamedCommands.registerCommand("stopAll", stopAll(shooter, intake, serializer));
+  }
+
+  /** Registers PathPlanner named commands using this SuperStructure instance. */
+  public void registerNamedCommands() {
+    registerNamedCommands(drive, shooter, intake, serializer);
   }
 }

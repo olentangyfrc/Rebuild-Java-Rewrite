@@ -103,7 +103,7 @@ public class Intake extends SubsystemBase {
         agitationTimer.restart();
         isAgitating = true;
       }
-      start();
+      intakeIdle();
 
       double time = agitationTimer.get();
 
@@ -127,30 +127,52 @@ public class Intake extends SubsystemBase {
     }
   }
 
+  private double staticDownVoltage = 0.0;
+
+  public void setStaticDownVoltage(double voltage) {
+    this.staticDownVoltage = voltage;
+  }
+
+  public void driveIntakeDown(double voltage) {
+    setPivotSetPoint(Math.toRadians(0.5));
+    start();
+    setStaticDownVoltage(voltage);
+  }
+
   public void setPivotSetPoint(double pivotSetPoint) {
     pivotTargetAngle = MathUtil.clamp(pivotSetPoint, Math.toRadians(0.5), Math.toRadians(125));
   }
 
   public void resetIntake() {
+    staticDownVoltage = 0.0;
     setPivotSetPoint(0);
     intakeIdle();
   }
 
-  public void startagitationIntake() {
+  public void startAgitationIntake() {
     setIntakeAgitation(true);
   }
 
-  public void stopagitationIntake() {
+  public void stopAgitationIntake() {
     setIntakeAgitation(false);
   }
 
-  static double lastAngle = 0;
+  // Deprecated backward-compatibility aliases
+  @Deprecated
+  public void startagitationIntake() {
+    startAgitationIntake();
+  }
+
+  @Deprecated
+  public void stopagitationIntake() {
+    stopAgitationIntake();
+  }
 
   public void periodic() {
-    pivotMotor.setControl(
-        new com.ctre.phoenix6.controls.VoltageOut(
-            pivotPIDController.calculate(getPivotAngle(), pivotTargetAngle)
-                + pivotFFWController.calculate(getPivotAngle(), 0)));
+    double pidOutput = pivotPIDController.calculate(getPivotAngle(), pivotTargetAngle);
+    double ffOutput = pivotFFWController.calculate(getPivotAngle(), 0);
+    double totalVoltage = pidOutput + ffOutput + staticDownVoltage;
+    pivotMotor.setControl(new com.ctre.phoenix6.controls.VoltageOut(totalVoltage));
   }
 
   // tell velocity in RPS

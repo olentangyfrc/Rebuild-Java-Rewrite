@@ -432,15 +432,20 @@ public class Drive extends SubsystemBase {
     return virtualTarget;
   }
 
-  /** Calculates the distance in meters to the virtual hub for Shoot on the Move. */
-  @AutoLogOutput(key = "Drive/ShootOnTheMoveDistance")
-  public double getShootOnTheMoveDistance() {
+  /** Calculates the distance in meters to the virtual hub for Shoot for Hub. */
+  @AutoLogOutput(key = "Drive/ShootForHubDistance")
+  public double getShootForHubDistance() {
     return getPose().getTranslation().getDistance(getVirtualHubPosition());
   }
 
-  /** Calculates the target heading angle facing the virtual hub for Shoot on the Move. */
-  @AutoLogOutput(key = "Drive/ShootOnTheMoveRotation")
-  public Rotation2d getShootOnTheMoveRotation() {
+  /** Legacy getter for shoot on the move distance. */
+  public double getShootOnTheMoveDistance() {
+    return getShootForHubDistance();
+  }
+
+  /** Calculates the target heading angle facing the virtual hub for Shoot for Hub. */
+  @AutoLogOutput(key = "Drive/ShootForHubRotation")
+  public Rotation2d getShootForHubRotation() {
     return getRotationToHub(getVirtualHubPosition());
   }
   @AutoLogOutput(key = "Drive/PassRotation")
@@ -448,6 +453,11 @@ public class Drive extends SubsystemBase {
     return getRotationToPassFinal();
   }
 
+
+  /** Legacy getter for shoot on the move rotation. */
+  public Rotation2d getShootOnTheMoveRotation() {
+    return getShootForHubRotation();
+  }
 
   /** Resets the current odometry pose. */
   public void setPose(Pose2d pose) {
