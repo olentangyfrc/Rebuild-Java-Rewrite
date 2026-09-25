@@ -124,8 +124,9 @@ public class RobotContainer {
     serializer.init();
     intake.init();
 
-    // Register PathPlanner named commands for SuperStructure
+    // Register PathPlanner named commands for SuperStructure and setup Elastic tab
     SuperStructure.registerNamedCommands(drive, shooter, intake, serializer);
+    SuperStructure.setupElasticTab(shooter, intake);
 
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());

@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.drive.Drive;
+import java.util.Set;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
@@ -31,6 +32,7 @@ public class DriveCommands {
   private static final double ANGLE_KD = 0.4;
   private static final double ANGLE_MAX_VELOCITY = 40.0;
   private static final double ANGLE_MAX_ACCELERATION = 60.0;
+  private static final double LINE_UP_Y_TOLERANCE_METERS = 0.05;
 
   private DriveCommands() {}
 
@@ -328,23 +330,161 @@ public class DriveCommands {
     return Commands.runOnce(() -> drive.setPose(Pose2d.kZero), drive).ignoringDisable(true);
   }
 
+  /**
+   * Line up command that aligns the robot's Y coordinate (or full Pose2d) to a target Pose2d.
+   *
+   * @param drive the drive subsystem
+   * @param targetPose the target Pose2d to line up to
+   * @param yOnly if true, only aligns the Y position and rotation, preserving current X position
+   * @return a command that aligns the robot to targetPose
+   */
+  public static Command lineUp(Drive drive, Pose2d targetPose, boolean yOnly) {
+    return Commands.defer(
+        () -> {
+          @SuppressWarnings("resource")
+          PIDController xController = new PIDController(5.0, 0.0, 0.0);
+          @SuppressWarnings("resource")
+          PIDController yController = new PIDController(5.0, 0.0, 0.0);
+          ProfiledPIDController angleController =
+              new ProfiledPIDController(
+                  ANGLE_KP,
+                  0.0,
+                  ANGLE_KD,
+                  new TrapezoidProfile.Constraints(ANGLE_MAX_VELOCITY, ANGLE_MAX_ACCELERATION));
+          angleController.enableContinuousInput(-Math.PI, Math.PI);
+
+          return Commands.run(
+                  () -> {
+                    Pose2d currentPose = drive.getPose();
+                    double vx =
+                        yOnly ? 0.0 : xController.calculate(currentPose.getX(), targetPose.getX());
+                    double vy = yController.calculate(currentPose.getY(), targetPose.getY());
+                    double omega =
+                        angleController.calculate(
+                            currentPose.getRotation().getRadians(),
+                            targetPose.getRotation().getRadians());
+
+                    Translation2d linearVelocity = new Translation2d(vx, vy);
+                    double maxSpeed = drive.getMaxLinearSpeedMetersPerSec();
+                    if (linearVelocity.getNorm() > maxSpeed) {
+                      linearVelocity = linearVelocity.times(maxSpeed / linearVelocity.getNorm());
+                    }
+
+                    ChassisSpeeds speeds =
+                        new ChassisSpeeds(linearVelocity.getX(), linearVelocity.getY(), omega);
+                    drive.runVelocity(
+                        ChassisSpeeds.fromFieldRelativeSpeeds(speeds, drive.getRotation()));
+                  },
+                  drive)
+              .until(
+                  () -> {
+                    Pose2d currentPose = drive.getPose();
+                    boolean yAtGoal =
+                        Math.abs(currentPose.getY() - targetPose.getY())
+                            < LINE_UP_Y_TOLERANCE_METERS;
+                    boolean rotAtGoal =
+                        Math.abs(
+                                currentPose
+                                    .getRotation()
+                                    .minus(targetPose.getRotation())
+                                    .getRadians())
+                            < Math.toRadians(2.0);
+                    if (yOnly) {
+                      return yAtGoal && rotAtGoal;
+                    }
+                    boolean xAtGoal = Math.abs(currentPose.getX() - targetPose.getX()) < 0.05;
+                    return yAtGoal && xAtGoal && rotAtGoal;
+                  })
+              .finallyDo(interrupted -> drive.runVelocity(new ChassisSpeeds()))
+              .withTimeout(3.0);
+        },
+        Set.of(drive));
+  }
+
+  public static Command lineUp(Drive drive, Pose2d targetPose) {
+    return lineUp(drive, targetPose, true);
+  }
+
+  /**
+   * Field-relative drive command that drives along the X axis until a target X coordinate is
+   * reached, maintaining targetY with PID control and a 3-second safety timeout.
+   *
+   * @param drive the drive subsystem
+   * @param targetX the target X coordinate to reach (in meters)
+   * @param bumpSpeed the speed to drive at along the X axis (m/s)
+   * @param targetY the target Y coordinate to align to
+   * @return a command that drives along X until targetX is reached and then stops
+   */
+  public static Command bump(Drive drive, double targetX, double bumpSpeed, double targetY) {
+    return Commands.defer(
+        () -> {
+          double speedMag = Math.abs(bumpSpeed);
+          double currentX = drive.getPose().getX();
+          double deltaX = targetX - currentX;
+          double direction =
+              (Math.abs(deltaX) > 0.01) ? Math.signum(deltaX) : ((bumpSpeed < 0) ? -1.0 : 1.0);
+
+          @SuppressWarnings("resource")
+          PIDController yController = new PIDController(5.0, 0.0, 0.0);
+
+          return Commands.run(
+                  () -> {
+                    Pose2d currentPose = drive.getPose();
+                    double vx = direction * speedMag;
+                    double vy = yController.calculate(currentPose.getY(), targetY);
+
+                    ChassisSpeeds speeds = new ChassisSpeeds(vx, vy, 0.0);
+                    drive.runVelocity(
+                        ChassisSpeeds.fromFieldRelativeSpeeds(speeds, drive.getRotation()));
+                  },
+                  drive)
+              .until(
+                  () -> {
+                    double currX = drive.getPose().getX();
+                    return (direction > 0) ? (currX >= targetX) : (currX <= targetX);
+                  })
+              .finallyDo(interrupted -> drive.runVelocity(new ChassisSpeeds()))
+              .withTimeout(3.0);
+        },
+        Set.of(drive));
+  }
+
+  /**
+   * Field-relative drive command that drives along the X axis until targetX is reached, capturing
+   * the robot's Y pose at start and maintaining Y position with a 3-second safety timeout.
+   */
   public static Command bump(Drive drive, double targetX, double bumpSpeed) {
-    return Commands.run(
-            () ->
-                drive.runVelocity(
-                    ChassisSpeeds.fromFieldRelativeSpeeds(
-                        new ChassisSpeeds(bumpSpeed, 0.0, 0.0), drive.getRotation())),
-            drive)
-        .until(
-            () -> {
-              double currentX = drive.getPose().getX();
-              if (bumpSpeed > 0) {
-                return currentX > targetX;
-              } else if (bumpSpeed < 0) {
-                return currentX < targetX;
-              }
-              return true;
-            })
-        .finallyDo(interrupted -> drive.runVelocity(new ChassisSpeeds()));
+    return Commands.defer(
+        () -> {
+          double speedMag = Math.abs(bumpSpeed);
+          double startY = drive.getPose().getY();
+          double currentX = drive.getPose().getX();
+          double deltaX = targetX - currentX;
+          double direction =
+              (Math.abs(deltaX) > 0.01) ? Math.signum(deltaX) : ((bumpSpeed < 0) ? -1.0 : 1.0);
+
+          @SuppressWarnings("resource")
+          PIDController yController = new PIDController(5.0, 0.0, 0.0);
+
+          return Commands.run(
+                  () -> {
+                    Pose2d currentPose = drive.getPose();
+                    double vx = direction * speedMag;
+                    double vy = yController.calculate(currentPose.getY(), startY);
+
+                    ChassisSpeeds speeds = new ChassisSpeeds(vx, vy, 0.0);
+                    drive.runVelocity(
+                        ChassisSpeeds.fromFieldRelativeSpeeds(speeds, drive.getRotation()));
+                  },
+                  drive)
+              .until(
+                  () -> {
+                    double currX = drive.getPose().getX();
+                    return (direction > 0) ? (currX >= targetX) : (currX <= targetX);
+                  })
+              .finallyDo(interrupted -> drive.runVelocity(new ChassisSpeeds()))
+              .withTimeout(3.0);
+        },
+        Set.of(drive));
   }
 }

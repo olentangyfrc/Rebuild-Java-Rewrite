@@ -1,17 +1,35 @@
 package frc.robot.commands;
 
 import com.pathplanner.lib.auto.NamedCommands;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.BooleanEntry;
 import edu.wpi.first.networktables.DoubleEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.serializer.Serializer;
 import frc.robot.subsystems.shooter.Shooter;
+import org.littletonrobotics.junction.Logger;
 
 public class SuperStructure {
+  private static String lastCommand = "None";
+
+  public static String getLastCommand() {
+    return lastCommand;
+  }
+
+  private static void setLastCommand(String commandName) {
+    lastCommand = commandName;
+    Logger.recordOutput("SuperStructure/LastCommand", commandName);
+    SmartDashboard.putString("SuperStructure/LastCommand", commandName);
+  }
+
   private final Drive drive;
   private final Shooter shooter;
   private final Intake intake;
@@ -33,6 +51,7 @@ public class SuperStructure {
   static {
     useDrivetrainPose.setDefault(true);
     distanceOverride.setDefault(0.0);
+    setLastCommand("None");
   }
 
   public SuperStructure(Drive drive, Shooter shooter, Intake intake, Serializer serializer) {
@@ -42,52 +61,67 @@ public class SuperStructure {
     this.serializer = serializer;
   }
 
-  /** Command to shoot for the hub using velocity-compensated distance when moving. */
+  /**
+   * Sets up the Elastic Dashboard / Shuffleboard tab displaying last called SuperStructure command.
+   */
+  public static void setupElasticTab(Shooter shooter, Intake intake) {
+    ShuffleboardTab tab = Shuffleboard.getTab("SuperStructure");
+
+    tab.addString("Last Command", () -> lastCommand).withPosition(0, 0).withSize(3, 2);
+
+    tab.addBoolean("Shooter Drum Ready", shooter::isDrumAtSpeed).withPosition(3, 0).withSize(2, 1);
+
+    tab.addBoolean("Shooter Hood Ready", shooter::isHoodAtSetpoint)
+        .withPosition(3, 1)
+        .withSize(2, 1);
+
+    tab.addBoolean("Passing Active", shooter::isPassing).withPosition(5, 0).withSize(2, 1);
+  }
+
+  /** Command to shoot for the hub using velocity-compensated distance. */
   public static Command shootForHub(
       Drive drive, Shooter shooter, Intake intake, Serializer serializer) {
     return Commands.run(
-        () -> {
-          boolean usePose = useDrivetrainPose.get();
-          double distance = usePose ? drive.getShootForHubDistance() : distanceOverride.get();
-          shooter.shootForHub(distance);
-          if (shooter.isDrumAtSpeed() && shooter.isHoodAtSetpoint()) {
-            shooter.startFeed();
-            serializer.start();
-            intake.startAgitationIntake();
-          } else {
-            shooter.waitForFeed();
-            intake.resetIntake();
-            serializer.stop();
-          }
-        },
-        shooter,
-        intake,
-        serializer);
+            () -> {
+              boolean usePose = useDrivetrainPose.get();
+              double distance = usePose ? drive.getShootForHubDistance() : distanceOverride.get();
+              shooter.shootForHub(distance);
+              if (shooter.isDrumAtSpeed() && shooter.isHoodAtSetpoint()) {
+                shooter.startFeed();
+                serializer.start();
+                intake.startAgitationIntake();
+              } else {
+                shooter.waitForFeed();
+                intake.resetIntake();
+                serializer.stop();
+              }
+            },
+            shooter,
+            intake,
+            serializer)
+        .beforeStarting(() -> setLastCommand("shootForHub"));
   }
 
   public static Command pass(Drive drive, Shooter shooter, Intake intake, Serializer serializer) {
     return Commands.run(
-        () -> {
-          boolean usePose = useDrivetrainPose.get();
-          double distance = usePose ? drive.getDistanceFromPass() : distanceOverride.get();
-          shooter.pass(distance);
-          if (shooter.isDrumAtSpeed() && shooter.isHoodAtSetpoint()) {
-
-            shooter.startfeed();
-            serializer.start();
-
-            intake.startagitationIntake();
-            // intake.setPivotSetPoint(0);
-
-          } else {
-            shooter.waitforfeed();
-            intake.resetIntake();
-            serializer.stop();
-          }
-        },
-        shooter,
-        intake,
-        serializer);
+            () -> {
+              boolean usePose = useDrivetrainPose.get();
+              double distance = usePose ? drive.getDistanceFromPass() : distanceOverride.get();
+              shooter.pass(distance);
+              if (shooter.isDrumAtSpeed() && shooter.isHoodAtSetpoint()) {
+                shooter.startfeed();
+                serializer.start();
+                intake.startagitationIntake();
+              } else {
+                shooter.waitforfeed();
+                intake.resetIntake();
+                serializer.stop();
+              }
+            },
+            shooter,
+            intake,
+            serializer)
+        .beforeStarting(() -> setLastCommand("pass"));
   }
 
   public static Command shootOnTheMove(
@@ -98,6 +132,7 @@ public class SuperStructure {
   public static Command stopAll(Shooter shooter, Intake intake, Serializer serializer) {
     return Commands.runOnce(
         () -> {
+          setLastCommand("stopAll");
           shooter.stop();
           shooter.resetHood();
           shooter.stopFeed();
@@ -112,13 +147,13 @@ public class SuperStructure {
   public static Command intakeStart(Intake intake) {
     return Commands.runOnce(
         () -> {
+          setLastCommand("intakeStart");
           intake.start();
           intake.setPivotSetPoint(0);
         },
         intake);
   }
 
-  @Deprecated
   public static Command intakeSTART(Intake intake) {
     return intakeStart(intake);
   }
@@ -128,7 +163,6 @@ public class SuperStructure {
     return shootForHub(drive, shooter, intake, serializer);
   }
 
-  @Deprecated
   public Command shootOnTheMove() {
     return shootForHub();
   }
@@ -141,7 +175,6 @@ public class SuperStructure {
     return intakeStart(intake);
   }
 
-  @Deprecated
   public Command intakeSTART() {
     return intakeStart();
   }
@@ -153,29 +186,79 @@ public class SuperStructure {
   /**
    * Command to drive along the X axis until targetX is reached while simultaneously intaking fuel
    * and warming up the shooter to 1800 RPM.
-   *
-   * <p>Uses deadlineWith so the overall command finishes as soon as the drive bump reaches targetX.
    */
+  public static Command bump(
+      Drive drive,
+      Shooter shooter,
+      Intake intake,
+      double targetX,
+      double bumpSpeed,
+      double targetY) {
+    return DriveCommands.bump(drive, targetX, bumpSpeed, targetY)
+        .deadlineWith(
+            intakeStart(intake), Commands.run(() -> shooter.setDrumVelocity(1800.0), shooter))
+        .beforeStarting(() -> setLastCommand("bump"));
+  }
+
   public static Command bump(
       Drive drive, Shooter shooter, Intake intake, double targetX, double bumpSpeed) {
     return DriveCommands.bump(drive, targetX, bumpSpeed)
         .deadlineWith(
-            intakeStart(intake), Commands.run(() -> shooter.setDrumVelocity(1800.0), shooter));
+            intakeStart(intake), Commands.run(() -> shooter.setDrumVelocity(1800.0), shooter))
+        .beforeStarting(() -> setLastCommand("bump"));
   }
 
   public Command bump(double targetX, double bumpSpeed) {
     return bump(drive, shooter, intake, targetX, bumpSpeed);
   }
 
+  public Command bump(double targetX, double bumpSpeed, double targetY) {
+    return bump(drive, shooter, intake, targetX, bumpSpeed, targetY);
+  }
+
+  /** Command to line up the drivetrain to a target pose while running intake. */
+  public static Command lineUp(Drive drive, Intake intake, Pose2d targetPose, boolean yOnly) {
+    return DriveCommands.lineUp(drive, targetPose, yOnly)
+        .deadlineWith(intakeStart(intake))
+        .beforeStarting(() -> setLastCommand("lineUp"));
+  }
+
+  public static Command lineUp(Drive drive, Intake intake, Pose2d targetPose) {
+    return lineUp(drive, intake, targetPose, true);
+  }
+
+  public static Command botLineUpLeft(Drive drive, Intake intake) {
+    return lineUp(drive, intake, new Pose2d(2.5, 7.51, Rotation2d.kZero), true)
+        .beforeStarting(() -> setLastCommand("botLineUpLeft"));
+  }
+
+  public static Command botLineUpRight(Drive drive, Intake intake) {
+    return lineUp(drive, intake, new Pose2d(2.95, 0.50, Rotation2d.kZero), true)
+        .beforeStarting(() -> setLastCommand("botLineUpRight"));
+  }
+
+  public Command botLineUpLeft() {
+    return botLineUpLeft(drive, intake);
+  }
+
+  public Command botLineUpRight() {
+    return botLineUpRight(drive, intake);
+  }
+
   /** Registers PathPlanner named commands for SuperStructure actions. */
   public static void registerNamedCommands(
       Drive drive, Shooter shooter, Intake intake, Serializer serializer) {
-    NamedCommands.registerCommand("shootForHub", shootForHub(drive, shooter, intake, serializer));
     NamedCommands.registerCommand(
-        "shootOnTheMove", shootForHub(drive, shooter, intake, serializer));
+        "shootForHub",
+        Commands.parallel(
+                DriveCommands.shootForHub(drive), shootForHub(drive, shooter, intake, serializer))
+            .withTimeout(4.0));
+
     NamedCommands.registerCommand("intake", intakeStart(intake));
     NamedCommands.registerCommand("stopAll", stopAll(shooter, intake, serializer));
-    NamedCommands.registerCommand("bump", bump(drive, shooter, intake, 4.5, -1.6));
+    NamedCommands.registerCommand("bump", bump(drive, shooter, intake, 3.0, -3.3));
+    NamedCommands.registerCommand("botlineupleft", botLineUpLeft(drive, intake));
+    NamedCommands.registerCommand("botlineupright", botLineUpRight(drive, intake));
   }
 
   /** Registers a custom bump NamedCommand with specified targetX and speed. */

@@ -28,6 +28,42 @@
           "data": {
             "name": "bump"
           }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopAll"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "shootForHub"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopAll"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "botlineupright"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopAll"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "RAG5"
+          }
         }
       ]
     }
