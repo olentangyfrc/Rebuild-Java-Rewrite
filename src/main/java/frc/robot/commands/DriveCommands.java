@@ -28,7 +28,7 @@ import java.util.function.Supplier;
 
 public class DriveCommands {
   private static final double DEADBAND = 0.1;
-  private static final double ANGLE_KP = 9.0;
+  private static final double ANGLE_KP = 7.0;
   private static final double ANGLE_KD = 0.4;
   private static final double ANGLE_MAX_VELOCITY = 40.0;
   private static final double ANGLE_MAX_ACCELERATION = 60.0;
@@ -222,14 +222,35 @@ public class DriveCommands {
   }
 
   /**
+   * Field-relative drive command using joysticks for linear control and PID targeting to
+   * continuously point/align the drivetrain heading toward either the Hub (if X < 5.2) or Pass
+   * target (if X >= 5.2).
+   */
+  public static Command smartShoot(
+      Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
+    return joystickDriveAtAngle(
+        drive,
+        () -> xSupplier.getAsDouble() * 0.65,
+        () -> ySupplier.getAsDouble() * 0.65,
+        () ->
+            drive.getPose().getX() < 5.2
+                ? drive.getShootForHubRotation()
+                : drive.getPassRotation());
+  }
+
+  public static Command smartShoot(Drive drive) {
+    return smartShoot(drive, () -> 0.0, () -> 0.0);
+  }
+
+  /**
    * Field-relative drive command using PID controllers for X position, Y position, and Rotation to
    * drive the robot to a target Pose2d.
    */
   public static Command driveToPose(Drive drive, Supplier<Pose2d> poseSupplier) {
     @SuppressWarnings("resource")
-    PIDController xController = new PIDController(5.0, 0.0, 0.0);
+    PIDController xController = new PIDController(3.14, 0.0, 0.0);
     @SuppressWarnings("resource")
-    PIDController yController = new PIDController(5.0, 0.0, 0.0);
+    PIDController yController = new PIDController(3.14, 0, 0.0);
     ProfiledPIDController angleController =
         new ProfiledPIDController(
             ANGLE_KP,
