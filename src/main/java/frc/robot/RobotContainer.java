@@ -148,13 +148,25 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
-    // Default command: normal field-relative drive with motion limiting when Left Bumper is held
+    // Default commands: idle states when no buttons/commands are active
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
             () -> -controller.getLeftY() * (controller.leftBumper().getAsBoolean() ? 0.2 : 1.0),
             () -> -controller.getLeftX() * (controller.leftBumper().getAsBoolean() ? 0.2 : 1.0),
             () -> -controller.getRightX() * (controller.leftBumper().getAsBoolean() ? 0.2 : 1.0)));
+
+    intake.setDefaultCommand(Commands.run(intake::resetIntake, intake));
+
+    shooter.setDefaultCommand(
+        Commands.run(
+            () -> {
+              shooter.stop();
+              shooter.resetHood();
+            },
+            shooter));
+
+    serializer.setDefaultCommand(Commands.run(serializer::stop, serializer));
 
     // ==========================================
     // DRIVER CONTROLLER BINDINGS (Port 0)
@@ -182,7 +194,7 @@ public class RobotContainer {
         .and(DriverStation::isTeleopEnabled)
         .whileTrue(
             Commands.parallel(
-                DriveCommands.shootForHub(
+                DriveCommands.smartShoot(
                     drive, () -> -controller.getLeftY(), () -> -controller.getLeftX()),
                 SuperStructure.smartShoot(
                     drive,
@@ -195,8 +207,11 @@ public class RobotContainer {
                     () ->
                         controller.rightBumper().getAsBoolean() || controller.y().getAsBoolean())));
 
-    // Driver A Button: Toggle Stash Intake
-    controller.a().and(DriverStation::isTeleopEnabled).onTrue(SuperStructure.stashIntake(intake));
+    // Driver A Button: Stash Intake (held)
+    controller
+        .a()
+        .and(DriverStation::isTeleopEnabled)
+        .whileTrue(SuperStructure.stashIntake(intake));
 
     // Driver X Button: Eject Fuel
     controller
@@ -214,7 +229,7 @@ public class RobotContainer {
     controller
         .start()
         .and(DriverStation::isTeleopEnabled)
-        .onTrue(SuperStructure.stopAll(shooter, intake, serializer));
+        .whileTrue(SuperStructure.stopAll(shooter, intake, serializer));
 
     // Driver Back Button: Zero Gyro Heading
     controller.back().and(DriverStation::isTeleopEnabled).onTrue(DriveCommands.zeroGyro(drive));
@@ -251,7 +266,7 @@ public class RobotContainer {
     auxController
         .leftBumper()
         .and(DriverStation::isTeleopEnabled)
-        .onTrue(SuperStructure.stopAll(shooter, intake, serializer));
+        .whileTrue(SuperStructure.stopAll(shooter, intake, serializer));
 
     // Aux Y Button: Increase Manual Shooter RPM Offset (+20 RPM)
     auxController

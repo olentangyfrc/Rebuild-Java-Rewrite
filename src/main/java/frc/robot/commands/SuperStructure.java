@@ -185,6 +185,21 @@ public class SuperStructure {
         .finallyDo(intake::resetIntake);
   }
 
+  public static Command intakeStartAuto(Intake intake) {
+    return Commands.runOnce(
+            () -> {
+              intake.start();
+              intake.setPivotSetPoint(0);
+            },
+            intake)
+        .beforeStarting(() -> setLastCommand("intakeStartAuto"))
+        .finallyDo(intake::resetIntake);
+  }
+
+  public static Command intakeSTARTAuto(Intake intake) {
+    return intakeStartAuto(intake);
+  }
+
   public static Command intakeSTART(Intake intake) {
     return intakeStart(intake);
   }
@@ -391,7 +406,7 @@ public class SuperStructure {
                 DriveCommands.shootForHub(drive), shootForHub(drive, shooter, intake, serializer))
             .withTimeout(4.0));
 
-    NamedCommands.registerCommand("intake", intakeStart(intake));
+    NamedCommands.registerCommand("intake", intakeStartAuto(intake));
     NamedCommands.registerCommand("stopAll", stopAll(shooter, intake, serializer));
     NamedCommands.registerCommand("bump", bump(drive, shooter, intake, 3.0, -3.3));
     NamedCommands.registerCommand("botlineupleft", botLineUpLeft(drive, intake));
