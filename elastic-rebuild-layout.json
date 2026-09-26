@@ -1,0 +1,64 @@
+{
+  "version": 1.0,
+  "tabs": [
+    {
+      "name": "REBUILD Game",
+      "containers": [
+        {
+          "title": "Match Time Remaining",
+          "x": 0,
+          "y": 0,
+          "w": 3,
+          "h": 2,
+          "type": "Number Display",
+          "topic": "/SmartDashboard/Match Time"
+        },
+        {
+          "title": "Time to Next Shift",
+          "x": 3,
+          "y": 0,
+          "w": 3,
+          "h": 2,
+          "type": "Number Display",
+          "topic": "/SmartDashboard/Time to Next Shift"
+        },
+        {
+          "title": "Hub Active",
+          "x": 6,
+          "y": 0,
+          "w": 3,
+          "h": 2,
+          "type": "Boolean Box",
+          "topic": "/SmartDashboard/Hub Active"
+        },
+        {
+          "title": "Auto Result",
+          "x": 9,
+          "y": 0,
+          "w": 3,
+          "h": 1,
+          "type": "Text View",
+          "topic": "/SmartDashboard/Auto Result"
+        },
+        {
+          "title": "Current Shift",
+          "x": 9,
+          "y": 1,
+          "w": 3,
+          "h": 1,
+          "type": "Text View",
+          "topic": "/SmartDashboard/Current Shift"
+        },
+        {
+          "title": "Shift Change Soon",
+          "x": 0,
+          "y": 2,
+          "w": 3,
+          "h": 1,
+          "type": "Boolean Box",
+          "topic": "/SmartDashboard/ShiftScheduler/ShiftChangeUpcoming"
+        }
+      ]
+    }
+  ]
+}

@@ -15,6 +15,7 @@ import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.serializer.Serializer;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.util.ShiftScheduler;
 import org.littletonrobotics.junction.Logger;
 
 public class SuperStructure {
@@ -93,16 +94,19 @@ public class SuperStructure {
                 shooter.startFeed();
                 serializer.start();
                 intake.startAgitationIntake();
+                ShiftScheduler.setFeedingActive(true);
               } else {
                 shooter.waitForFeed();
                 intake.resetIntake();
                 serializer.stop();
+                ShiftScheduler.setFeedingActive(false);
               }
             },
             shooter,
             intake,
             serializer)
-        .beforeStarting(() -> setLastCommand("shootForHub"));
+        .beforeStarting(() -> setLastCommand("shootForHub"))
+        .finallyDo(() -> ShiftScheduler.setFeedingActive(false));
   }
 
   public static Command pass(Drive drive, Shooter shooter, Intake intake, Serializer serializer) {
@@ -117,16 +121,19 @@ public class SuperStructure {
                 shooter.startfeed();
                 serializer.start();
                 intake.startagitationIntake();
+                ShiftScheduler.setFeedingActive(true);
               } else {
                 shooter.waitforfeed();
                 intake.resetIntake();
                 serializer.stop();
+                ShiftScheduler.setFeedingActive(false);
               }
             },
             shooter,
             intake,
             serializer)
-        .beforeStarting(() -> setLastCommand("pass"));
+        .beforeStarting(() -> setLastCommand("pass"))
+        .finallyDo(() -> ShiftScheduler.setFeedingActive(false));
   }
 
   public static Command shootOnTheMove(
@@ -143,6 +150,7 @@ public class SuperStructure {
           shooter.stopFeed();
           intake.resetIntake();
           serializer.stop();
+          ShiftScheduler.setFeedingActive(false);
         },
         shooter,
         intake,

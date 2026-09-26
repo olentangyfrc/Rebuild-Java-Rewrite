@@ -8,6 +8,7 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -26,6 +27,7 @@ import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.serializer.Serializer;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.vision.Vision;
+import frc.robot.util.ShiftScheduler;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -42,8 +44,9 @@ public class RobotContainer {
   private final Intake intake;
   private Vision vision;
 
-  // Controller
+  // Controllers
   private final CommandXboxController controller = new CommandXboxController(0);
+  private final CommandXboxController auxController = new CommandXboxController(1);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
@@ -124,9 +127,12 @@ public class RobotContainer {
     serializer.init();
     intake.init();
 
-    // Register PathPlanner named commands for SuperStructure and setup Elastic tab
+    // Register PathPlanner named commands for SuperStructure and setup Elastic tabs
     SuperStructure.registerNamedCommands(drive, shooter, intake, serializer);
     SuperStructure.setupElasticTab(shooter, intake);
+    ShiftScheduler.setupElasticTab();
+    ShiftScheduler.setDriverController(controller);
+    ShiftScheduler.setAuxController(auxController);
 
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
@@ -151,15 +157,22 @@ public class RobotContainer {
             () -> -controller.getRightX()));
 
     // Emergency stop all superstructure subsystems on Left Bumper
-    controller.leftBumper().onTrue(SuperStructure.stopAll(shooter, intake, serializer));
+    controller
+        .leftBumper()
+        .and(DriverStation::isTeleopEnabled)
+        .onTrue(SuperStructure.stopAll(shooter, intake, serializer));
 
     // Run intake while holding Y button
-    controller.y().whileTrue(SuperStructure.intakeStart(intake));
+    controller
+        .y()
+        .and(DriverStation::isTeleopEnabled)
+        .whileTrue(SuperStructure.intakeStart(intake));
 
     // Snake Drive: Align heading with direction of motion when holding A button, with Intake
     // running
     controller
         .a()
+        .and(DriverStation::isTeleopEnabled)
         .whileTrue(
             Commands.parallel(
                 DriveCommands.snakeDrive(
@@ -170,6 +183,7 @@ public class RobotContainer {
     // Right Trigger
     controller
         .rightTrigger()
+        .and(DriverStation::isTeleopEnabled)
         .whileTrue(
             Commands.parallel(
                 DriveCommands.shootForHub(
@@ -179,6 +193,7 @@ public class RobotContainer {
     // Pass on the Move: Aim at pass target while driving on Left Trigger
     controller
         .leftTrigger()
+        .and(DriverStation::isTeleopEnabled)
         .whileTrue(
             Commands.parallel(
                 DriveCommands.passOnTheMove(
@@ -186,7 +201,7 @@ public class RobotContainer {
                 SuperStructure.pass(drive, shooter, intake, serializer)));
 
     // Zero gyro heading when Back button is pressed, and add dashboard controls
-    controller.back().onTrue(DriveCommands.zeroGyro(drive));
+    controller.back().and(DriverStation::isTeleopEnabled).onTrue(DriveCommands.zeroGyro(drive));
     edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putData(
         "Zero Gyro", DriveCommands.zeroGyro(drive));
     edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putData(

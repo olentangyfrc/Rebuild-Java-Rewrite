@@ -37,6 +37,9 @@ public class DriveCommands {
   private DriveCommands() {}
 
   private static Translation2d getLinearVelocityFromJoysticks(double x, double y) {
+    if (!DriverStation.isTeleopEnabled()) {
+      return Translation2d.kZero;
+    }
     // Apply deadband
     double linearMagnitude = MathUtil.applyDeadband(Math.hypot(x, y), DEADBAND);
     Rotation2d linearDirection = new Rotation2d(Math.atan2(y, x));
@@ -183,7 +186,11 @@ public class DriveCommands {
    */
   public static Command shootForHub(
       Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
-    return joystickDriveAtAngle(drive, xSupplier, ySupplier, drive::getShootForHubRotation);
+    return joystickDriveAtAngle(
+        drive,
+        () -> xSupplier.getAsDouble() * 0.65,
+        () -> ySupplier.getAsDouble() * 0.65,
+        drive::getShootForHubRotation);
   }
 
   /**
@@ -207,7 +214,11 @@ public class DriveCommands {
 
   public static Command passOnTheMove(
       Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
-    return joystickDriveAtAngle(drive, xSupplier, ySupplier, drive::getPassRotation);
+    return joystickDriveAtAngle(
+        drive,
+        () -> xSupplier.getAsDouble() * 0.65,
+        () -> ySupplier.getAsDouble() * 0.65,
+        drive::getPassRotation);
   }
 
   /**
