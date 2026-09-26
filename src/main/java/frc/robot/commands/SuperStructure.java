@@ -16,6 +16,7 @@ import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.serializer.Serializer;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.util.ShiftScheduler;
+import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
 public class SuperStructure {
@@ -169,6 +170,109 @@ public class SuperStructure {
 
   public static Command intakeSTART(Intake intake) {
     return intakeStart(intake);
+  }
+
+  public static Command stashIntake(Intake intake) {
+    return Commands.run(() -> intake.stash(), intake)
+        .beforeStarting(() -> setLastCommand("stashIntake"));
+  }
+
+  public static Command ejectFuel(Shooter shooter, Intake intake, Serializer serializer) {
+    return Commands.run(
+            () -> {
+              intake.eject();
+              serializer.reverse();
+              shooter.reverseFeed();
+            },
+            shooter,
+            intake,
+            serializer)
+        .beforeStarting(() -> setLastCommand("ejectFuel"))
+        .finallyDo(
+            () -> {
+              intake.stop();
+              serializer.stop();
+              shooter.stopFeed();
+            });
+  }
+
+  public static Command unjam(Shooter shooter, Intake intake, Serializer serializer) {
+    return Commands.run(
+            () -> {
+              intake.eject();
+              serializer.reverse();
+              shooter.unjam();
+            },
+            shooter,
+            intake,
+            serializer)
+        .beforeStarting(() -> setLastCommand("unjam"))
+        .finallyDo(
+            () -> {
+              intake.stop();
+              serializer.stop();
+              shooter.stop();
+            });
+  }
+
+  public static Command smartShoot(
+      Drive drive,
+      Shooter shooter,
+      Intake intake,
+      Serializer serializer,
+      Supplier<Boolean> auxStashSupplier,
+      Supplier<Boolean> auxIntakeSupplier) {
+    return Commands.run(
+            () -> {
+              boolean isHubShot = drive.getPose().getX() < 5.2;
+
+              if (isHubShot) {
+                boolean usePose = useDrivetrainPose.get();
+                double distance = usePose ? drive.getShootForHubDistance() : distanceOverride.get();
+                shooter.shootForHub(distance);
+              } else {
+                boolean usePose = useDrivetrainPose.get();
+                double distance = usePose ? drive.getDistanceFromPass() : distanceOverride.get();
+                shooter.pass(distance);
+              }
+
+              boolean aligned = isHubShot ? drive.isAlignedToHub() : drive.isAlignedToPass();
+
+              if (shooter.isDrumAtSpeed() && shooter.isHoodAtSetpoint() && aligned) {
+                shooter.startFeed();
+                serializer.start();
+
+                if (auxStashSupplier.get()) {
+                  intake.stash();
+                } else if (auxIntakeSupplier.get()) {
+                  intake.start();
+                  intake.setPivotSetPoint(0);
+                } else {
+                  intake.startAgitationIntake();
+                }
+                ShiftScheduler.setFeedingActive(true);
+              } else {
+                shooter.waitForFeed();
+                if (auxStashSupplier.get()) {
+                  intake.stash();
+                } else {
+                  intake.resetIntake();
+                }
+                serializer.stop();
+                ShiftScheduler.setFeedingActive(false);
+              }
+            },
+            shooter,
+            intake,
+            serializer)
+        .beforeStarting(() -> setLastCommand("smartShoot"))
+        .finallyDo(
+            () -> {
+              shooter.stopFeed();
+              serializer.stop();
+              intake.resetIntake();
+              ShiftScheduler.setFeedingActive(false);
+            });
   }
 
   // Instance command helpers

@@ -192,4 +192,18 @@ public class Intake extends SubsystemBase {
   public void intakeIdle() {
     leaderMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(-15.0));
   }
+
+  public void stash() {
+    stopAgitationIntake();
+    setPivotSetPoint(Math.toRadians(125));
+    intakeIdle();
+  }
+
+  public void resetPivotEncoder() {
+    pivotEncoder.setPosition(0);
+  }
+
+  public void adjustPivotAngle(double deltaRad) {
+    setPivotSetPoint(pivotTargetAngle + deltaRad);
+  }
 }

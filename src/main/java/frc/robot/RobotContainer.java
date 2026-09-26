@@ -148,39 +148,35 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
-    // Default command, normal field-relative drive
+    // Default command: normal field-relative drive with motion limiting when Left Bumper is held
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
-            () -> -controller.getLeftY(),
-            () -> -controller.getLeftX(),
-            () -> -controller.getRightX()));
+            () -> -controller.getLeftY() * (controller.leftBumper().getAsBoolean() ? 0.2 : 1.0),
+            () -> -controller.getLeftX() * (controller.leftBumper().getAsBoolean() ? 0.2 : 1.0),
+            () -> -controller.getRightX() * (controller.leftBumper().getAsBoolean() ? 0.2 : 1.0)));
 
-    // Emergency stop all superstructure subsystems on Left Bumper
-    controller
-        .leftBumper()
-        .and(DriverStation::isTeleopEnabled)
-        .onTrue(SuperStructure.stopAll(shooter, intake, serializer));
+    // ==========================================
+    // DRIVER CONTROLLER BINDINGS (Port 0)
+    // ==========================================
 
-    // Run intake while holding Y button
+    // Driver Right Bumper: Intake Fuel
     controller
-        .y()
+        .rightBumper()
         .and(DriverStation::isTeleopEnabled)
         .whileTrue(SuperStructure.intakeStart(intake));
 
-    // Snake Drive: Align heading with direction of motion when holding A button, with Intake
-    // running
+    // Driver Left Trigger: Snake Drive (0.8 speed) + Intake Fuel
     controller
-        .a()
+        .leftTrigger()
         .and(DriverStation::isTeleopEnabled)
         .whileTrue(
             Commands.parallel(
                 DriveCommands.snakeDrive(
-                    drive, () -> -controller.getLeftY(), () -> -controller.getLeftX()),
+                    drive, () -> -controller.getLeftY() * 0.8, () -> -controller.getLeftX() * 0.8),
                 SuperStructure.intakeStart(intake)));
 
-    // Shoot for Hub (Shoot on the Move): Aim at velocity-compensated virtual Hub while driving on
-    // Right Trigger
+    // Driver Right Trigger: Smart Shoot / Pass on the Move with Aux Intake/Stash overrides
     controller
         .rightTrigger()
         .and(DriverStation::isTeleopEnabled)
@@ -188,20 +184,120 @@ public class RobotContainer {
             Commands.parallel(
                 DriveCommands.shootForHub(
                     drive, () -> -controller.getLeftY(), () -> -controller.getLeftX()),
-                SuperStructure.shootForHub(drive, shooter, intake, serializer)));
+                SuperStructure.smartShoot(
+                    drive,
+                    shooter,
+                    intake,
+                    serializer,
+                    () ->
+                        auxController.rightBumper().getAsBoolean()
+                            || auxController.x().getAsBoolean(),
+                    () ->
+                        controller.rightBumper().getAsBoolean() || controller.y().getAsBoolean())));
 
-    // Pass on the Move: Aim at pass target while driving on Left Trigger
+    // Driver A Button: Toggle Stash Intake
+    controller.a().and(DriverStation::isTeleopEnabled).onTrue(SuperStructure.stashIntake(intake));
+
+    // Driver X Button: Eject Fuel
     controller
-        .leftTrigger()
+        .x()
         .and(DriverStation::isTeleopEnabled)
-        .whileTrue(
-            Commands.parallel(
-                DriveCommands.passOnTheMove(
-                    drive, () -> -controller.getLeftY(), () -> -controller.getLeftX()),
-                SuperStructure.pass(drive, shooter, intake, serializer)));
+        .whileTrue(SuperStructure.ejectFuel(shooter, intake, serializer));
 
-    // Zero gyro heading when Back button is pressed, and add dashboard controls
+    // Driver B Button: Unjam
+    controller
+        .b()
+        .and(DriverStation::isTeleopEnabled)
+        .whileTrue(SuperStructure.unjam(shooter, intake, serializer));
+
+    // Driver Start Button: Emergency Stop All Superstructure
+    controller
+        .start()
+        .and(DriverStation::isTeleopEnabled)
+        .onTrue(SuperStructure.stopAll(shooter, intake, serializer));
+
+    // Driver Back Button: Zero Gyro Heading
     controller.back().and(DriverStation::isTeleopEnabled).onTrue(DriveCommands.zeroGyro(drive));
+
+    // ==========================================
+    // AUX CONTROLLER BINDINGS (Port 1)
+    // ==========================================
+
+    // Aux Right Bumper: Stash Intake (also active while shooting!)
+    auxController
+        .rightBumper()
+        .and(DriverStation::isTeleopEnabled)
+        .whileTrue(SuperStructure.stashIntake(intake));
+
+    // Aux X Button: Emergency Stash Intake
+    auxController
+        .x()
+        .and(DriverStation::isTeleopEnabled)
+        .whileTrue(SuperStructure.stashIntake(intake));
+
+    // Aux Right Trigger: Warm Up Shooter Flywheel
+    auxController
+        .rightTrigger(0.2)
+        .and(DriverStation::isTeleopEnabled)
+        .whileTrue(frc.robot.commands.ShooterCommands.spinUpDrum(shooter));
+
+    // Aux Left Trigger: Eject / Unjam Fuel
+    auxController
+        .leftTrigger(0.2)
+        .and(DriverStation::isTeleopEnabled)
+        .whileTrue(SuperStructure.ejectFuel(shooter, intake, serializer));
+
+    // Aux Left Bumper: Operator Cancel / Stop All
+    auxController
+        .leftBumper()
+        .and(DriverStation::isTeleopEnabled)
+        .onTrue(SuperStructure.stopAll(shooter, intake, serializer));
+
+    // Aux Y Button: Increase Manual Shooter RPM Offset (+20 RPM)
+    auxController
+        .y()
+        .and(DriverStation::isTeleopEnabled)
+        .onTrue(Commands.runOnce(() -> shooter.adjustManualRpmOffset(20.0), shooter));
+
+    // Aux A Button: Decrease Manual Shooter RPM Offset (-20 RPM)
+    auxController
+        .a()
+        .and(DriverStation::isTeleopEnabled)
+        .onTrue(Commands.runOnce(() -> shooter.adjustManualRpmOffset(-20.0), shooter));
+
+    // Aux POV Up (D-Pad Up): Increase Manual Hood Angle Offset (+0.5 deg)
+    auxController
+        .povUp()
+        .and(DriverStation::isTeleopEnabled)
+        .onTrue(
+            Commands.runOnce(() -> shooter.adjustManualHoodOffset(Math.toRadians(0.5)), shooter));
+
+    // Aux POV Down (D-Pad Down): Decrease Manual Hood Angle Offset (-0.5 deg)
+    auxController
+        .povDown()
+        .and(DriverStation::isTeleopEnabled)
+        .onTrue(
+            Commands.runOnce(() -> shooter.adjustManualHoodOffset(Math.toRadians(-0.5)), shooter));
+
+    // Aux POV Right (D-Pad Right): Manual Intake Pivot Up (+5 deg)
+    auxController
+        .povRight()
+        .and(DriverStation::isTeleopEnabled)
+        .onTrue(Commands.runOnce(() -> intake.adjustPivotAngle(Math.toRadians(5.0)), intake));
+
+    // Aux POV Left (D-Pad Left): Manual Intake Pivot Down (-5 deg)
+    auxController
+        .povLeft()
+        .and(DriverStation::isTeleopEnabled)
+        .onTrue(Commands.runOnce(() -> intake.adjustPivotAngle(Math.toRadians(-5.0)), intake));
+
+    // Aux Start Button: Reset Intake Pivot Encoder Position to 0
+    auxController
+        .start()
+        .and(DriverStation::isTeleopEnabled)
+        .onTrue(Commands.runOnce(intake::resetPivotEncoder, intake));
+
+    // Dashboard Controls
     edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putData(
         "Zero Gyro", DriveCommands.zeroGyro(drive));
     edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putData(

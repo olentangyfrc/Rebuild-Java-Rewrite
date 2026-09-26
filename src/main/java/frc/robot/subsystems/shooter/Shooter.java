@@ -283,25 +283,36 @@ public class Shooter extends SubsystemBase {
     indexerTunnel.setControl(new com.ctre.phoenix6.controls.VoltageOut(0.0));
   }
 
+  private double manualRpmOffset = 0.0;
+  private double manualHoodOffset = 0.0;
+
+  public void adjustManualRpmOffset(double delta) {
+    manualRpmOffset += delta;
+  }
+
+  public void adjustManualHoodOffset(double deltaRad) {
+    manualHoodOffset += deltaRad;
+  }
+
   public void shootForHub(double distanceMeters) {
     if (shooterOverrideEnabled.get()) {
-      setHoodSetPoint(Math.toRadians(manualHoodAngleDegrees.get()));
-      setDrumVelocity(manualDrumRPM.get());
+      setHoodSetPoint(Math.toRadians(manualHoodAngleDegrees.get()) + manualHoodOffset);
+      setDrumVelocity(manualDrumRPM.get() + manualRpmOffset);
     } else {
       ShooterUtil.ShooterParameters params = ShooterUtil.getInterpolatedValues(distanceMeters);
-      setHoodSetPoint(params.hoodAngleRad());
-      setDrumVelocity(params.flywheelRpm());
+      setHoodSetPoint(params.hoodAngleRad() + manualHoodOffset);
+      setDrumVelocity(params.flywheelRpm() + manualRpmOffset);
     }
   }
 
   public void pass(double distanceMeters) {
     if (shooterOverrideEnabled.get()) {
-      setHoodSetPoint(Math.toRadians(manualHoodAngleDegrees.get()));
-      setDrumVelocity(manualDrumRPM.get());
+      setHoodSetPoint(Math.toRadians(manualHoodAngleDegrees.get()) + manualHoodOffset);
+      setDrumVelocity(manualDrumRPM.get() + manualRpmOffset);
     } else {
       ShooterUtil.ShooterParameters params = ShooterUtil.getInterpolatedValuesPass(distanceMeters);
-      setHoodSetPoint(params.hoodAngleRad());
-      setDrumVelocity(params.flywheelRpm());
+      setHoodSetPoint(params.hoodAngleRad() + manualHoodOffset);
+      setDrumVelocity(params.flywheelRpm() + manualRpmOffset);
     }
   }
 
@@ -313,6 +324,16 @@ public class Shooter extends SubsystemBase {
   public void waitForFeed() {
     setTunnelVelocity((40 * 60));
     setFeederVelocity((-1800));
+  }
+
+  public void reverseFeed() {
+    setTunnelVelocity(-3000);
+    setFeederVelocity(-3000);
+  }
+
+  public void unjam() {
+    setDrumVelocity(-1000);
+    reverseFeed();
   }
 
   public void stopFeed() {
