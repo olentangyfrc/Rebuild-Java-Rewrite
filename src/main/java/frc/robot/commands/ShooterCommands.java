@@ -17,7 +17,12 @@ public class ShooterCommands {
   }
 
   public static Command spinUpDrum(Shooter shooter) {
-    return Commands.run(() -> shooter.spinUpDrum(), shooter);
+    return Commands.run(() -> shooter.spinUpDrum(), shooter)
+        .finallyDo(
+            () -> {
+              shooter.stop();
+              shooter.resetHood();
+            });
   }
 
   public static Command stop(Shooter shooter) {
