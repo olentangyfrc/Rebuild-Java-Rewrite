@@ -107,7 +107,15 @@ public class SuperStructure {
             intake,
             serializer)
         .beforeStarting(() -> setLastCommand("shootForHub"))
-        .finallyDo(() -> ShiftScheduler.setFeedingActive(false));
+        .finallyDo(
+            () -> {
+              shooter.stop();
+              shooter.resetHood();
+              shooter.stopFeed();
+              serializer.stop();
+              intake.resetIntake();
+              ShiftScheduler.setFeedingActive(false);
+            });
   }
 
   public static Command pass(Drive drive, Shooter shooter, Intake intake, Serializer serializer) {
@@ -134,7 +142,15 @@ public class SuperStructure {
             intake,
             serializer)
         .beforeStarting(() -> setLastCommand("pass"))
-        .finallyDo(() -> ShiftScheduler.setFeedingActive(false));
+        .finallyDo(
+            () -> {
+              shooter.stop();
+              shooter.resetHood();
+              shooter.stopFeed();
+              serializer.stop();
+              intake.resetIntake();
+              ShiftScheduler.setFeedingActive(false);
+            });
   }
 
   public static Command shootOnTheMove(
@@ -159,13 +175,14 @@ public class SuperStructure {
   }
 
   public static Command intakeStart(Intake intake) {
-    return Commands.runOnce(
-        () -> {
-          setLastCommand("intakeStart");
-          intake.start();
-          intake.setPivotSetPoint(0);
-        },
-        intake);
+    return Commands.run(
+            () -> {
+              intake.start();
+              intake.setPivotSetPoint(0);
+            },
+            intake)
+        .beforeStarting(() -> setLastCommand("intakeStart"))
+        .finallyDo(intake::resetIntake);
   }
 
   public static Command intakeSTART(Intake intake) {
@@ -174,7 +191,8 @@ public class SuperStructure {
 
   public static Command stashIntake(Intake intake) {
     return Commands.run(() -> intake.stash(), intake)
-        .beforeStarting(() -> setLastCommand("stashIntake"));
+        .beforeStarting(() -> setLastCommand("stashIntake"))
+        .finallyDo(intake::resetIntake);
   }
 
   public static Command ejectFuel(Shooter shooter, Intake intake, Serializer serializer) {
@@ -268,6 +286,8 @@ public class SuperStructure {
         .beforeStarting(() -> setLastCommand("smartShoot"))
         .finallyDo(
             () -> {
+              shooter.stop();
+              shooter.resetHood();
               shooter.stopFeed();
               serializer.stop();
               intake.resetIntake();
