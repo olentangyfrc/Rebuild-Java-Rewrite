@@ -170,7 +170,7 @@ public class Intake extends SubsystemBase {
     double ffOutput = pivotFFWController.calculate(getPivotAngle(), 0);
     double totalVoltage = pidOutput + ffOutput + staticDownVoltage;
     pivotMotor.setControl(new com.ctre.phoenix6.controls.VoltageOut(totalVoltage));
-    if(getPivotAngle() > 35){
+    if (getPivotAngle() > Math.toRadians(35)) {
       leaderMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(0.0));
     }
   }
@@ -199,7 +199,7 @@ public class Intake extends SubsystemBase {
   public void stash() {
     stopAgitationIntake();
     setPivotSetPoint(Math.toRadians(125));
-    intakeIdle();
+    // intakeIdle();
   }
 
   public void resetPivotEncoder() {
