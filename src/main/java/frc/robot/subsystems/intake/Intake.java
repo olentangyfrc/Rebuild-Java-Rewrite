@@ -170,6 +170,9 @@ public class Intake extends SubsystemBase {
     double ffOutput = pivotFFWController.calculate(getPivotAngle(), 0);
     double totalVoltage = pidOutput + ffOutput + staticDownVoltage;
     pivotMotor.setControl(new com.ctre.phoenix6.controls.VoltageOut(totalVoltage));
+    if(getPivotAngle() > 35){
+      leaderMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(0.0));
+    }
   }
 
   // tell velocity in RPS
