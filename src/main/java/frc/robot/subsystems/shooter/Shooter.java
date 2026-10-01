@@ -2,6 +2,7 @@ package frc.robot.subsystems.shooter;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -227,17 +228,19 @@ public class Shooter extends SubsystemBase {
     setDrumVelocity(spinUpVelocity);
   }
 
+  private final VelocityVoltage drumVelocityRequest = new VelocityVoltage(0).withEnableFOC(true);
+
   // Set drum speed to a specific velocity in RPM
   public void setDrumVelocity(double velocity) {
     this.targetDrumRpm = velocity;
     if (!lowCeiling) {
       leftTopDrumLeader.setControl(
-          new com.ctre.phoenix6.controls.VelocityVoltage(
-              MathUtil.clamp((velocity / 60), 0, (maxdrumVelocity / 60))));
+          drumVelocityRequest.withVelocity(
+              MathUtil.clamp((velocity / 60.0), 0, (maxdrumVelocity / 60.0))));
     } else if (lowCeiling) {
       leftTopDrumLeader.setControl(
-          new com.ctre.phoenix6.controls.VelocityVoltage(
-              MathUtil.clamp((velocity / 60), 0, ((maxdrumVelocity / 60) / 3))));
+          drumVelocityRequest.withVelocity(
+              MathUtil.clamp((velocity / 60.0), 0, ((maxdrumVelocity / 60.0) / 3))));
     }
   }
 
