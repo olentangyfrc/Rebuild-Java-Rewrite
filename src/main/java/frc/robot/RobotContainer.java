@@ -156,8 +156,6 @@ public class RobotContainer {
             () -> -controller.getLeftX() * (controller.leftBumper().getAsBoolean() ? 0.2 : 1.0),
             () -> -controller.getRightX() * (controller.leftBumper().getAsBoolean() ? 0.2 : 1.0)));
 
-    intake.setDefaultCommand(Commands.run(intake::resetIntake, intake));
-
     shooter.setDefaultCommand(
         Commands.run(
             () -> {

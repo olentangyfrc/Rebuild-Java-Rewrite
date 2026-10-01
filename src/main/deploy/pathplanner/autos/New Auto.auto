@@ -60,9 +60,22 @@
           }
         },
         {
-          "type": "path",
+          "type": "parallel",
           "data": {
-            "pathName": "RAG5"
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "RAG5"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "intake"
+                }
+              }
+            ]
           }
         },
         {

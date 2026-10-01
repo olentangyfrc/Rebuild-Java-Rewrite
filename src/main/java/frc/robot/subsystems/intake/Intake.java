@@ -166,12 +166,14 @@ public class Intake extends SubsystemBase {
   }
 
   public void periodic() {
-    double pidOutput = pivotPIDController.calculate(getPivotAngle(), pivotTargetAngle);
-    double ffOutput = pivotFFWController.calculate(getPivotAngle(), 0);
+    double currentAngle = getPivotAngle();
+    double pidOutput = pivotPIDController.calculate(currentAngle, pivotTargetAngle);
+    double ffOutput = pivotFFWController.calculate(currentAngle, 0);
     double totalVoltage = pidOutput + ffOutput + staticDownVoltage;
     pivotMotor.setControl(new com.ctre.phoenix6.controls.VoltageOut(totalVoltage));
-    if (getPivotAngle() > Math.toRadians(35)) {
-      leaderMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(0.0));
+
+    if (currentAngle > Math.toRadians(35)) {
+      stop();
     }
   }
 

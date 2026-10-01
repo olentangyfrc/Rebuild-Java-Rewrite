@@ -192,8 +192,7 @@ public class SuperStructure {
               intake.setPivotSetPoint(0);
             },
             intake)
-        .beforeStarting(() -> setLastCommand("intakeStartAuto"))
-        .finallyDo(intake::resetIntake);
+        .beforeStarting(() -> setLastCommand("intakeStartAuto"));
   }
 
   public static Command intakeSTARTAuto(Intake intake) {
