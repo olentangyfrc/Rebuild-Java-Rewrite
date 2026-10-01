@@ -179,10 +179,18 @@ public class Intake extends SubsystemBase {
 
   // tell velocity in RPS
   public void setIntakeRollersCustom(double velocity) {
+    if (getPivotAngle() > Math.toRadians(35)) {
+      stop();
+      return;
+    }
     leaderMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(velocity));
   }
 
   public void start() {
+    if (getPivotAngle() > Math.toRadians(35)) {
+      stop();
+      return;
+    }
     leaderMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(-100.0));
   }
 
@@ -191,17 +199,24 @@ public class Intake extends SubsystemBase {
   }
 
   public void eject() {
+    if (getPivotAngle() > Math.toRadians(35)) {
+      stop();
+      return;
+    }
     leaderMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(100.0));
   }
 
   public void intakeIdle() {
+    if (getPivotAngle() > Math.toRadians(35)) {
+      stop();
+      return;
+    }
     leaderMotor.setControl(new com.ctre.phoenix6.controls.VelocityVoltage(-15.0));
   }
 
   public void stash() {
     stopAgitationIntake();
     setPivotSetPoint(Math.toRadians(125));
-    // intakeIdle();
   }
 
   public void resetPivotEncoder() {
