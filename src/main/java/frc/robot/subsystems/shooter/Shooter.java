@@ -2,15 +2,16 @@ package frc.robot.subsystems.shooter;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.ArmFeedforward;
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.networktables.BooleanEntry;
 import edu.wpi.first.networktables.DoubleEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -64,10 +65,10 @@ public class Shooter extends SubsystemBase {
   private TalonFX hoodMotor;
   private CANcoder hoodEncoder;
 
-  private PIDController hoodPIDController;
-  private ArmFeedforward hoodFFWController;
-  private double hoodTargetAngle;
+  private double hoodTargetAngle = Math.toRadians(3);
   private double targetDrumRpm = 0.0;
+
+  private final PositionVoltage hoodPositionRequest = new PositionVoltage(0).withEnableFOC(true);
 
   private TalonFXConfiguration leftTopDrumLeaderConfig;
   private TalonFXConfiguration commonDrumFollowerConfig;
@@ -103,13 +104,6 @@ public class Shooter extends SubsystemBase {
     indexerTunnel = new TalonFX(indexerTunnelCanId, "can0");
 
     hoodEncoder = new CANcoder(hoodEncoderCanId, "can0");
-
-    hoodPIDController = new PIDController(5.2, 0, 0);
-    hoodFFWController = new ArmFeedforward(0.04, 0.29, 0);
-    hoodPIDController.setTolerance(Math.toRadians(1.5)); // min-max hood angle: 2 - 47
-    hoodPIDController.setIZone(Math.toRadians(0.5));
-    hoodPIDController.setSetpoint(Math.toRadians(3));
-    hoodPIDController.reset();
   }
 
   public void init() {
@@ -171,12 +165,22 @@ public class Shooter extends SubsystemBase {
     hoodMotorConfig = new TalonFXConfiguration();
     hoodMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     hoodMotorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+    hoodMotorConfig.Slot0 = new com.ctre.phoenix6.configs.Slot0Configs();
+    hoodMotorConfig.Slot0.kP = 5.2 * 2 * Math.PI;
+    hoodMotorConfig.Slot0.kI = 0.0;
+    hoodMotorConfig.Slot0.kD = 0.0;
+    hoodMotorConfig.Slot0.kS = 0.04;
+    hoodMotorConfig.Slot0.kG = 0.29;
+    hoodMotorConfig.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
+
+    hoodMotorConfig.Feedback.FeedbackRemoteSensorID = hoodEncoderCanId;
+    hoodMotorConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
 
     hoodMotor.getConfigurator().apply(hoodMotorConfig, 0.25);
   }
 
   public boolean isHoodAtSetpoint() {
-    return hoodPIDController.atSetpoint();
+    return Math.abs(getHoodAngle() - hoodTargetAngle) < Math.toRadians(1.5);
   }
 
   // public boolean isHoodAtSetPoint() {
@@ -215,10 +219,8 @@ public class Shooter extends SubsystemBase {
   }
 
   public void periodic() {
-    hoodMotor.setControl(
-        new com.ctre.phoenix6.controls.VoltageOut(
-            hoodPIDController.calculate(getHoodAngle(), hoodTargetAngle)
-                + hoodFFWController.calculate(getHoodAngle(), 0)));
+    double targetRotations = (hoodTargetAngle - Math.toRadians(31)) / (2 * Math.PI);
+    hoodMotor.setControl(hoodPositionRequest.withPosition(targetRotations));
     org.littletonrobotics.junction.Logger.recordOutput("Shooter/IsPassing", isPassing());
     org.littletonrobotics.junction.Logger.recordOutput(
         "Shooter/DrumSpeedScale", getDrumSpeedScale());
@@ -330,8 +332,8 @@ public class Shooter extends SubsystemBase {
   }
 
   public void reverseFeed() {
-    setTunnelVelocity(-3000);
-    setFeederVelocity(-3000);
+    setTunnelVelocity(-4000);
+    setFeederVelocity(-5000);
   }
 
   public void unjam() {

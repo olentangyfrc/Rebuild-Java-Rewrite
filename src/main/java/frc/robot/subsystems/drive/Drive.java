@@ -489,11 +489,17 @@ public class Drive extends SubsystemBase {
   /** Calculates the target heading angle facing the virtual hub for Shoot for Hub. */
   @AutoLogOutput(key = "Drive/ShootForHubRotation")
   public Rotation2d getShootForHubRotation() {
+    if (frc.robot.commands.SuperStructure.isShootWithoutRotationEnabled()) {
+      return getRotation();
+    }
     return getRotationToHub(getVirtualHubPosition());
   }
 
   @AutoLogOutput(key = "Drive/PassRotation")
   public Rotation2d getPassRotation() {
+    if (frc.robot.commands.SuperStructure.isShootWithoutRotationEnabled()) {
+      return getRotation();
+    }
     return getRotationToPassFinal();
   }
 
@@ -505,6 +511,9 @@ public class Drive extends SubsystemBase {
   /** Checks if the robot heading is aligned to the virtual Hub within a tolerance (in degrees). */
   @AutoLogOutput(key = "Drive/IsAlignedToHub")
   public boolean isAlignedToHub(double toleranceDegrees) {
+    if (frc.robot.commands.SuperStructure.isShootWithoutRotationEnabled()) {
+      return true;
+    }
     double errorRad = Math.abs(getRotation().minus(getShootForHubRotation()).getRadians());
     return errorRad < Math.toRadians(toleranceDegrees);
   }
@@ -516,6 +525,9 @@ public class Drive extends SubsystemBase {
   /** Checks if the robot heading is aligned to the Pass target within a tolerance (in degrees). */
   @AutoLogOutput(key = "Drive/IsAlignedToPass")
   public boolean isAlignedToPass(double toleranceDegrees) {
+    if (frc.robot.commands.SuperStructure.isShootWithoutRotationEnabled()) {
+      return true;
+    }
     double errorRad = Math.abs(getRotation().minus(getPassRotation()).getRadians());
     return errorRad < Math.toRadians(toleranceDegrees);
   }

@@ -5,7 +5,9 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.BooleanEntry;
 import edu.wpi.first.networktables.DoubleEntry;
+import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -50,10 +52,26 @@ public class SuperStructure {
           .getDoubleTopic("Shooter/ManualDistanceOverrideMeters")
           .getEntry(0.0);
 
+  private static final BooleanEntry shootWithoutRotation =
+      NetworkTableInstance.getDefault()
+          .getTable("SmartDashboard")
+          .getBooleanTopic("Shooter/ShootWithoutRotation")
+          .getEntry(false);
+
+  private static GenericEntry shootWithoutRotationEntry;
+
   static {
     useDrivetrainPose.setDefault(true);
     distanceOverride.setDefault(0.0);
+    shootWithoutRotation.setDefault(false);
     setLastCommand("None");
+  }
+
+  public static boolean isShootWithoutRotationEnabled() {
+    if (shootWithoutRotationEntry != null) {
+      return shootWithoutRotationEntry.getBoolean(false) || shootWithoutRotation.get();
+    }
+    return shootWithoutRotation.get();
   }
 
   public SuperStructure(Drive drive, Shooter shooter, Intake intake, Serializer serializer) {
@@ -78,6 +96,13 @@ public class SuperStructure {
         .withSize(2, 1);
 
     tab.addBoolean("Passing Active", shooter::isPassing).withPosition(5, 0).withSize(2, 1);
+
+    shootWithoutRotationEntry =
+        tab.add("Shoot Without Rotation", false)
+            .withWidget(BuiltInWidgets.kToggleSwitch)
+            .withPosition(5, 1)
+            .withSize(2, 1)
+            .getEntry();
   }
 
   /**
@@ -213,6 +238,7 @@ public class SuperStructure {
     return Commands.run(
             () -> {
               intake.eject();
+
               serializer.reverse();
               shooter.reverseFeed();
             },

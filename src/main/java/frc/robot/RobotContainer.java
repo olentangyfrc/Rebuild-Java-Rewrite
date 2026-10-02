@@ -152,9 +152,9 @@ public class RobotContainer {
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
-            () -> -controller.getLeftY() * (controller.leftBumper().getAsBoolean() ? 0.2 : 1.0),
-            () -> -controller.getLeftX() * (controller.leftBumper().getAsBoolean() ? 0.2 : 1.0),
-            () -> -controller.getRightX() * (controller.leftBumper().getAsBoolean() ? 0.2 : 1.0)));
+            () -> -controller.getLeftY() * (controller.leftBumper().getAsBoolean() ? 0.4 : 1.0),
+            () -> -controller.getLeftX() * (controller.leftBumper().getAsBoolean() ? 0.4 : 1.0),
+            () -> -controller.getRightX() * (controller.leftBumper().getAsBoolean() ? 0.4 : 1.0)));
 
     shooter.setDefaultCommand(
         Commands.run(
