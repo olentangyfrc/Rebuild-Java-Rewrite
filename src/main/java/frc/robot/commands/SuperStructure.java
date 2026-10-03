@@ -202,8 +202,8 @@ public class SuperStructure {
   public static Command intakeStart(Intake intake) {
     return Commands.run(
             () -> {
-              intake.start();
               intake.setPivotSetPoint(0);
+              intake.start();
             },
             intake)
         .beforeStarting(() -> setLastCommand("intakeStart"))
@@ -213,8 +213,8 @@ public class SuperStructure {
   public static Command intakeStartAuto(Intake intake) {
     return Commands.runOnce(
             () -> {
-              intake.start();
               intake.setPivotSetPoint(0);
+              intake.start();
             },
             intake)
         .beforeStarting(() -> setLastCommand("intakeStartAuto"));
@@ -303,8 +303,8 @@ public class SuperStructure {
                 if (auxStashSupplier.get()) {
                   intake.stash();
                 } else if (auxIntakeSupplier.get()) {
-                  intake.start();
                   intake.setPivotSetPoint(0);
+                  intake.start();
                 } else {
                   intake.startAgitationIntake();
                 }
